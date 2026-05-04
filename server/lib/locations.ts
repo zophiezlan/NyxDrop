@@ -165,9 +165,29 @@ export async function getLocationWithConsensus(
 
   const recentForTimeline = allReports.slice(0, 10);
 
-  // Phase 1 has no guardians table populated — empty array. Phase 7 wires
-  // this up.
-  const guardianNotes: GuardianNoteWithGuardian[] = [];
+  // Phase 7 wires guardian notes here. Joined with the guardian record so we
+  // get firstName + organisation in one round trip.
+  const noteRows = await db
+    .select({
+      id: schema.guardianNotes.id,
+      noteText: schema.guardianNotes.noteText,
+      updatedAt: schema.guardianNotes.updatedAt,
+      guardianFirstName: schema.guardians.firstName,
+      guardianOrganisation: schema.guardians.organisation,
+    })
+    .from(schema.guardianNotes)
+    .innerJoin(
+      schema.guardians,
+      eq(schema.guardianNotes.guardianId, schema.guardians.id),
+    )
+    .where(
+      and(
+        eq(schema.guardianNotes.locationId, id),
+        sql`${schema.guardianNotes.archivedAt} IS NULL`,
+      ),
+    )
+    .orderBy(desc(schema.guardianNotes.updatedAt));
+  const guardianNotes: GuardianNoteWithGuardian[] = noteRows;
 
   const distance =
     geo &&

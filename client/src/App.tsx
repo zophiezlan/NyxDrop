@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const MapRoute = lazy(() => import("./routes/map.js"));
 const AboutRoute = lazy(() => import("./routes/about.js"));
+const GuardianLoginRoute = lazy(() => import("./routes/guardian/login.js"));
+const GuardianDashboardRoute = lazy(() => import("./routes/guardian/dashboard.js"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,6 +57,8 @@ export function App() {
       <Suspense fallback={<MapLoading />}>
         <Switch>
           <Route path="/about" component={AboutRoute} />
+          <Route path="/guardian/dashboard" component={GuardianDashboardRoute} />
+          <Route path="/guardian" component={GuardianLoginRoute} />
           <Route>
             <MapRouteHost />
           </Route>
