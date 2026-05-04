@@ -13,7 +13,10 @@ export async function setupVite(app: Express, server: Server): Promise<void> {
   // Lazily import vite so production bundles do not pull it in.
   const { createServer: createViteServer } = await import("vite");
   const vite = await createViteServer({
-    root: path.resolve(repoRoot, "client"),
+    // Explicitly point at vite.config.ts at the repo root. Without this Vite
+    // searches inside `root` (= ./client) and silently misses our path
+    // aliases, and imports like `@/hooks/...` fail to resolve at dev-time.
+    configFile: path.resolve(repoRoot, "vite.config.ts"),
     appType: "custom",
     server: {
       middlewareMode: true,

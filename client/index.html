@@ -1,6 +1,17 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!--
+      Synchronous stubs for @vitejs/plugin-react's Fast Refresh hooks. The
+      plugin's own preamble (injected via transformIndexHtml above this) is a
+      module script whose import resolves async; main.tsx may load and run
+      before that resolves, causing App.tsx's preamble check to throw. These
+      stubs are overwritten by the real preamble once it lands. No-op in prod.
+    -->
+    <script>
+      window.$RefreshReg$ = window.$RefreshReg$ || function () {};
+      window.$RefreshSig$ = window.$RefreshSig$ || function () { return function (t) { return t; }; };
+    </script>
     <meta charset="UTF-8" />
     <meta
       name="viewport"

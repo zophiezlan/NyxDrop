@@ -22,17 +22,18 @@ function FitToBounds({
   locations: LocationWithConsensus[];
 }) {
   const map = useMap();
-  const fittedRef = useRef(false);
+  const fittedToLocationsRef = useRef(false);
 
   useEffect(() => {
-    if (fittedRef.current) return;
+    // Don't re-fit once we have a real fit. Otherwise: while locations are
+    // still loading, hold an interim view at `centre` (default zoom).
+    if (fittedToLocationsRef.current) return;
     if (locations.length === 0) {
       map.setView([centre.lat, centre.lon], 13);
-      fittedRef.current = true;
       return;
     }
-    // Fit to user + closest 8-12 pins. We approximate "closest" by sorting on
-    // squared euclidean distance which is fine for picking the nearest set.
+    // Fit to user + closest 8-12 pins. Approximate "closest" with squared
+    // euclidean distance — fine for picking the nearest set.
     const sorted = [...locations]
       .map((loc) => ({
         loc,
@@ -49,7 +50,7 @@ function FitToBounds({
       ...sorted.map((loc): [number, number] => [Number(loc.latitude), Number(loc.longitude)]),
     ];
     map.fitBounds(points, { padding: [40, 40], maxZoom: 14 });
-    fittedRef.current = true;
+    fittedToLocationsRef.current = true;
   }, [centre, locations, map]);
 
   return null;
