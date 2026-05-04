@@ -4,8 +4,18 @@
 
 :root {
   color-scheme: light dark;
+  /* Drives `font-size` on <html>; consumers using `rem` units scale with it.
+     Settings sheet adjusts via the slider (12-24px). */
+  --nl-font-size: 16px;
 }
 
+html {
+  font-size: var(--nl-font-size);
+}
+
+/* Always-on motion respect for users with the OS preference set. The
+   .nl-reduced-motion class also fires this rule when the user toggles
+   reduced motion in our Settings sheet. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -15,4 +25,46 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+.nl-reduced-motion *,
+.nl-reduced-motion *::before,
+.nl-reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* High-contrast mode (constitution IX, spec.md §12.1). Swaps neutral
+   greys for stronger contrast and forces a heavier focus ring. */
+.nl-high-contrast {
+  --nl-hc-bg: #ffffff;
+  --nl-hc-fg: #000000;
+  --nl-hc-border: #000000;
+  --nl-hc-link: #003eb3;
+  --nl-hc-focus: #ffbf00;
+}
+.nl-high-contrast body {
+  background: var(--nl-hc-bg) !important;
+  color: var(--nl-hc-fg) !important;
+}
+.nl-high-contrast a,
+.nl-high-contrast button[class*="text-blue"],
+.nl-high-contrast a[class*="text-blue"] {
+  color: var(--nl-hc-link) !important;
+  text-decoration: underline;
+}
+.nl-high-contrast .text-neutral-500,
+.nl-high-contrast .text-neutral-600,
+.nl-high-contrast .text-neutral-700 {
+  color: var(--nl-hc-fg) !important;
+}
+.nl-high-contrast :focus-visible {
+  outline: 3px solid var(--nl-hc-focus) !important;
+  outline-offset: 2px;
+}
+.nl-high-contrast button,
+.nl-high-contrast [role="button"],
+.nl-high-contrast [role="dialog"] {
+  border-color: var(--nl-hc-border) !important;
 }

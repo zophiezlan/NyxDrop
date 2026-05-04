@@ -5,6 +5,7 @@ import savedPlacesRouter from "./saved-places.js";
 import watchesRouter from "./watches.js";
 import pushRouter from "./push.js";
 import deviceRouter from "./device.js";
+import metricsRouter from "./metrics.js";
 import { logger } from "../lib/logger.js";
 
 export function registerRoutes(app: Express): void {
@@ -18,6 +19,7 @@ export function registerRoutes(app: Express): void {
   app.use(watchesRouter);
   app.use(pushRouter);
   app.use(deviceRouter);
+  app.use(metricsRouter);
 
   // 404 for unmatched /api routes — anything else falls through to the SPA.
   app.use("/api", (_req, res) => {

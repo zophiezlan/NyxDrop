@@ -17,9 +17,15 @@ import {
   activeFilterCount,
   type Filters,
 } from "@/components/sheets/FilterSheet";
+import { SettingsSheet } from "@/components/sheets/SettingsSheet";
+import { SearchBar } from "@/components/search/SearchBar";
 import { NowModeOverlay } from "@/components/now-mode/NowModeOverlay";
+import { useAppPreferences } from "@/hooks/use-app-preferences";
 import { filterByAbsenceOfBarriers } from "@shared/consensus";
 import type { LocationWithConsensus } from "@shared/schema";
+import { api, ApiError } from "@/lib/api";
+import { forgetDevice } from "@/lib/device-key";
+import { useQueryClient } from "@tanstack/react-query";
 
 const InteractiveMap = lazy(() =>
   import("@/components/map/InteractiveMap").then((m) => ({ default: m.InteractiveMap })),
@@ -50,6 +56,9 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
   const [toast, setToast] = useState<ToastState | null>(null);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
+  const { preferences, setPreferences } = useAppPreferences();
+  const qc = useQueryClient();
 
   // Drain offline-queued reports as soon as connectivity returns. Mounted
   // here (route-level) so it survives sheet open/close.
@@ -256,15 +265,43 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
       />
 
       <TopRightButtons
-        hidden={!!selectedId || !!reportState || openSheet === "my-places" || mode === "now"}
+        hidden={
+          !!selectedId ||
+          !!reportState ||
+          openSheet === "my-places" ||
+          settingsSheetOpen ||
+          mode === "now"
+        }
         onMyPlaces={() => navigate("/me")}
+        onSettings={() => setSettingsSheetOpen(true)}
       />
 
       <ModeToggle
         mode={mode}
         onChange={setMode}
-        hidden={mode === "now" || !!reportState || openSheet === "my-places"}
+        hidden={
+          mode === "now" ||
+          !!reportState ||
+          openSheet === "my-places" ||
+          settingsSheetOpen
+        }
       />
+
+      {!selectedId &&
+      !reportState &&
+      openSheet !== "my-places" &&
+      !settingsSheetOpen &&
+      mode !== "now" ? (
+        <SearchBar
+          geo={geo.isFallback ? undefined : geo.position}
+          voiceEnabled={preferences.voiceSearchEnabled}
+          locale={preferences.locale === "en" ? "en-AU" : preferences.locale}
+          onPick={(loc) => {
+            setSelectedId(loc.id);
+            navigate(`/m/${loc.id}`);
+          }}
+        />
+      ) : null}
 
       {mode === "now" ? (
         <NowModeOverlay onExit={() => setMode("plan")} />
@@ -276,6 +313,32 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
           onChange={setFilters}
           onClose={() => setFilterSheetOpen(false)}
           onReset={() => setFilters(EMPTY_FILTERS)}
+        />
+      ) : null}
+
+      {settingsSheetOpen ? (
+        <SettingsSheet
+          preferences={preferences}
+          onChange={setPreferences}
+          onClose={() => setSettingsSheetOpen(false)}
+          onForgetDevice={async () => {
+            try {
+              await api<void>("/api/device/forget", { method: "POST" });
+            } catch (err) {
+              if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
+                // Don't proceed on a 4xx — surface to user via toast and bail.
+                setToast({
+                  message: "Could not contact the server. Try again.",
+                  tone: "warn",
+                });
+                return;
+              }
+              // 5xx / network — proceed with local wipe regardless.
+            }
+            forgetDevice();
+            qc.clear();
+            window.location.assign("/");
+          }}
         />
       ) : null}
 
@@ -354,13 +417,24 @@ function phraseForBarrier(b: string): string {
 function TopRightButtons({
   hidden,
   onMyPlaces,
+  onSettings,
 }: {
   hidden: boolean;
   onMyPlaces: () => void;
+  onSettings: () => void;
 }) {
   if (hidden) return null;
   return (
-    <div className="fixed top-3 right-3 z-20 flex gap-2">
+    <div className="fixed top-3 right-3 z-30 flex gap-2">
+      <button
+        type="button"
+        onClick={onSettings}
+        aria-label="Settings"
+        title="Settings"
+        className="rounded-full bg-white shadow-lg ring-1 ring-neutral-200 w-11 h-11 text-lg flex items-center justify-center hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+      >
+        ⚙
+      </button>
       <button
         type="button"
         onClick={onMyPlaces}
