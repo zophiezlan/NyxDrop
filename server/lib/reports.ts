@@ -1,18 +1,12 @@
-import { and, eq, gte, sql, type InferSelectModel } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import { db, schema } from "./db.js";
 import { checkReportAllowed, recordReport } from "./rate-limit.js";
+import { calculateReliabilityScore } from "@shared/consensus";
 import type { InsertReport, Report, ReportType } from "@shared/schema";
 
 export type ReportSubmissionResult =
   | { ok: true; report: Report; ackMessage: string }
   | { ok: false; reason: "rate_limited"; nextReportAllowedAt: Date };
-
-const PER_REPORT_SCORE: Record<ReportType, number> = {
-  success: 5,
-  success_but: 3,
-  out_of_stock: 1,
-  denied: 0,
-};
 
 /**
  * Insert a report, update the rate-limit ledger, recompute the location's
@@ -53,10 +47,9 @@ export async function submitReport(
 
 /**
  * Recompute and persist the denormalised hot fields on `locations`:
- * `totalReportsCount`, `reliabilityScore`, `lastReportAt`.
- *
- * Reliability is the simple per-report-score mean for Phase 2; Phase 3
- * applies the confidence modifier from algorithms.md §2.
+ * `totalReportsCount`, `reliabilityScore`, `lastReportAt`. Phase 3 uses
+ * `calculateReliabilityScore` from `@shared/consensus` so the server-side
+ * value matches the canonical confidence-modified algorithm.
  */
 export async function recomputeLocationAggregates(locationId: string): Promise<void> {
   const rows = await db
@@ -77,22 +70,17 @@ export async function recomputeLocationAggregates(locationId: string): Promise<v
   }
 
   const total = rows.length;
-  const sum = rows.reduce(
-    (acc: number, r: InferSelectModel<typeof schema.reports>) =>
-      acc + PER_REPORT_SCORE[r.reportType],
-    0,
-  );
+  const reliability = calculateReliabilityScore(rows);
   const lastReportAt = rows.reduce<Date | null>((acc, r) => {
     if (!acc || r.submittedAt.getTime() > acc.getTime()) return r.submittedAt;
     return acc;
   }, null);
-  const score = (sum / total).toFixed(2);
 
   await db
     .update(schema.locations)
     .set({
       totalReportsCount: total,
-      reliabilityScore: score,
+      reliabilityScore: reliability.score.toFixed(2),
       lastReportAt,
     })
     .where(eq(schema.locations.id, locationId));

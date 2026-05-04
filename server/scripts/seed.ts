@@ -3,6 +3,7 @@ import "dotenv/config";
 import { db, schema } from "../lib/db.js";
 import { logger } from "../lib/logger.js";
 import { sql } from "drizzle-orm";
+import { calculateReliabilityScore } from "@shared/consensus";
 import type { BarrierValue, ReportType } from "@shared/schema";
 
 type DbInsertLocation = typeof schema.locations.$inferInsert;
@@ -599,20 +600,13 @@ async function main(): Promise<void> {
       return acc;
     }, null);
 
-    const scoreMap: Record<ReportType, number> = {
-      success: 5,
-      success_but: 3,
-      out_of_stock: 1,
-      denied: 0,
-    };
-    const baseScore =
-      allReports.reduce((s, r) => s + scoreMap[r.reportType], 0) / allReports.length;
+    const reliability = calculateReliabilityScore(allReports);
 
     await db
       .update(schema.locations)
       .set({
         totalReportsCount: allReports.length,
-        reliabilityScore: baseScore.toFixed(2),
+        reliabilityScore: reliability.score.toFixed(2),
         lastReportAt,
       })
       .where(sql`${schema.locations.id} = ${created.id}`);
