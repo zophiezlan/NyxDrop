@@ -3,6 +3,7 @@ import { db, schema } from "./db.js";
 import {
   composeLocationWithConsensus,
   haversineDistance,
+  surfaceBarrierFacts,
 } from "@shared/consensus";
 import type {
   GuardianNoteWithGuardian,
@@ -45,6 +46,7 @@ export interface UserGeo {
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const SEVENTY_TWO_HOURS_MS = 72 * 60 * 60 * 1000;
+const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
 
 // -----------------------------------------------------------------------------
 // List
@@ -89,9 +91,15 @@ export async function getLocationsWithConsensus(
 
   if (rows.length === 0) return [];
 
-  // Fetch the last 72h of reports for every location in one query, group in JS.
+  // Fetch the last 90 days of reports for every location in one query and
+  // group in JS. The 90-day window is the upper bound for both pin recency
+  // (72h subset) and barrier surfacing (30/90-day windows from
+  // algorithms.md §3). Sending barrierFacts on the list response is what
+  // lets the headline-barrier filter work client-side without a per-pin
+  // detail fetch (Phase 5 demand).
+  const ninetyDaysAgo = new Date(Date.now() - NINETY_DAYS_MS);
   const seventyTwoHoursAgo = new Date(Date.now() - SEVENTY_TWO_HOURS_MS);
-  const recentReportRows = await db
+  const reportRows = await db
     .select()
     .from(schema.reports)
     .where(
@@ -100,37 +108,30 @@ export async function getLocationsWithConsensus(
           schema.reports.locationId,
           rows.map((r) => r.id),
         ),
-        gte(schema.reports.submittedAt, seventyTwoHoursAgo),
+        gte(schema.reports.submittedAt, ninetyDaysAgo),
       ),
     );
-
-  const recentByLocation = groupBy(recentReportRows, (r) => r.locationId);
+  const reportsByLocation = groupBy(reportRows, (r) => r.locationId);
 
   return rows.map((loc) => {
-    const recent = recentByLocation.get(loc.id) ?? [];
+    const allRecent = reportsByLocation.get(loc.id) ?? [];
+    const last72h = allRecent.filter(
+      (r) => r.submittedAt.getTime() >= seventyTwoHoursAgo.getTime(),
+    );
     const distance =
       geo &&
       haversineDistance(geo, {
         lat: Number(loc.latitude),
         lon: Number(loc.longitude),
       });
-    // List response omits recentReports / guardianNotes / barrierFacts for
-    // payload size (contracts.md). Pass empty arrays to the composer; pin
-    // status / size / stars are still computed.
-    const composed = composeLocationWithConsensus(
-      loc,
-      recent,
-      // Reliability score is denormalised on the row; for the list endpoint
-      // we trust that value and pass an empty `allReports` to skip the
-      // expensive aggregate. Phase 3 may revise.
-      [],
-      [],
-      { distance },
-    );
+    // List response still omits recentReports (timeline) and guardianNotes
+    // for payload size; barrierFacts ARE included so the client filter can
+    // hide places by frequent barrier.
+    const composed = composeLocationWithConsensus(loc, last72h, allRecent, [], { distance });
     composed.reliabilityStars = Math.round(Number(loc.reliabilityScore));
     composed.recentReports = [];
     composed.guardianNotes = [];
-    composed.barrierFacts = [];
+    composed.barrierFacts = surfaceBarrierFacts(allRecent);
     return composed;
   });
 }

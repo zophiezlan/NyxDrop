@@ -6,34 +6,72 @@ import type { Map as LeafletMap } from "leaflet";
 import { createPinIcon, createUserLocationIcon } from "./pin-icon.js";
 import type { LocationWithConsensus } from "@shared/schema";
 
+type AutoFitMode = "default" | "nearest-3";
+
 interface InteractiveMapProps {
   centre: { lat: number; lon: number };
   userPosition?: { lat: number; lon: number };
   locations: LocationWithConsensus[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  /**
+   * "default" fits user + closest 12 pins once. "nearest-3" auto-zooms to
+   * user + closest 3 pins from the visible set every time the mode changes
+   * (Now mode demand from spec.md §4.1).
+   */
+  autoFitMode?: AutoFitMode;
 }
 
 function FitToBounds({
   centre,
   locations,
+  autoFitMode,
 }: {
   centre: { lat: number; lon: number };
   locations: LocationWithConsensus[];
+  autoFitMode: AutoFitMode;
 }) {
   const map = useMap();
-  const fittedToLocationsRef = useRef(false);
+  const fittedToDefaultRef = useRef(false);
+  // Track the last mode we fit for so we re-fit when entering Now mode.
+  const lastFitModeRef = useRef<AutoFitMode | null>(null);
 
   useEffect(() => {
-    // Don't re-fit once we have a real fit. Otherwise: while locations are
-    // still loading, hold an interim view at `centre` (default zoom).
-    if (fittedToLocationsRef.current) return;
     if (locations.length === 0) {
       map.setView([centre.lat, centre.lon], 13);
       return;
     }
-    // Fit to user + closest 8-12 pins. Approximate "closest" with squared
-    // euclidean distance — fine for picking the nearest set.
+
+    if (autoFitMode === "nearest-3") {
+      // Always re-fit when entering Now mode so the user sees the closest
+      // green/amber pins (spec.md §4.1). After the initial Now-mode fit,
+      // hold position so the user can pan freely without snap-back.
+      if (lastFitModeRef.current === "nearest-3") return;
+      const sorted = [...locations]
+        .map((loc) => ({
+          loc,
+          d:
+            (Number(loc.latitude) - centre.lat) ** 2 +
+            (Number(loc.longitude) - centre.lon) ** 2,
+        }))
+        .sort((a, b) => a.d - b.d)
+        .slice(0, 3)
+        .map((entry) => entry.loc);
+      const points: [number, number][] = [
+        [centre.lat, centre.lon],
+        ...sorted.map((loc): [number, number] => [
+          Number(loc.latitude),
+          Number(loc.longitude),
+        ]),
+      ];
+      map.fitBounds(points, { padding: [60, 60], maxZoom: 15 });
+      lastFitModeRef.current = "nearest-3";
+      return;
+    }
+
+    // Default: fit user + closest 12 once on first load.
+    lastFitModeRef.current = "default";
+    if (fittedToDefaultRef.current) return;
     const sorted = [...locations]
       .map((loc) => ({
         loc,
@@ -44,14 +82,16 @@ function FitToBounds({
       .sort((a, b) => a.d - b.d)
       .slice(0, 12)
       .map((entry) => entry.loc);
-
     const points: [number, number][] = [
       [centre.lat, centre.lon],
-      ...sorted.map((loc): [number, number] => [Number(loc.latitude), Number(loc.longitude)]),
+      ...sorted.map((loc): [number, number] => [
+        Number(loc.latitude),
+        Number(loc.longitude),
+      ]),
     ];
     map.fitBounds(points, { padding: [40, 40], maxZoom: 14 });
-    fittedToLocationsRef.current = true;
-  }, [centre, locations, map]);
+    fittedToDefaultRef.current = true;
+  }, [centre, locations, map, autoFitMode]);
 
   return null;
 }
@@ -62,6 +102,7 @@ export function InteractiveMap({
   locations,
   selectedId,
   onSelect,
+  autoFitMode = "default",
 }: InteractiveMapProps) {
   const userIcon = useMemo(() => createUserLocationIcon(), []);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -83,7 +124,7 @@ export function InteractiveMap({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         maxZoom={19}
       />
-      <FitToBounds centre={centre} locations={locations} />
+      <FitToBounds centre={centre} locations={locations} autoFitMode={autoFitMode} />
       {userPosition ? (
         <Marker
           position={[userPosition.lat, userPosition.lon]}

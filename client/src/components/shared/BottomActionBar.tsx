@@ -1,15 +1,23 @@
 interface BottomActionBarProps {
   onIWentHere: () => void;
   onAddPlace: () => void;
-  /** Hidden if the user is in Now mode — Phase 5 will pass this through. */
+  onFilters: () => void;
+  /** Number of active filters (rendered as a small badge on the Filters button). */
+  activeFilterCount?: number;
+  /** Hidden when a sheet is open or in Now mode. */
   hidden?: boolean;
 }
 
 /**
- * The persistent bottom action bar in Plan mode (spec.md §3.3). Filters land
- * in Phase 5 — this Phase 2 version ships the two write-path entry points.
+ * The persistent bottom action bar in Plan mode (spec.md §3.3).
  */
-export function BottomActionBar({ onIWentHere, onAddPlace, hidden }: BottomActionBarProps) {
+export function BottomActionBar({
+  onIWentHere,
+  onAddPlace,
+  onFilters,
+  activeFilterCount = 0,
+  hidden,
+}: BottomActionBarProps) {
   if (hidden) return null;
   return (
     <div className="fixed inset-x-0 bottom-0 z-20 px-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-3 pointer-events-none">
@@ -27,6 +35,22 @@ export function BottomActionBar({ onIWentHere, onAddPlace, hidden }: BottomActio
           className="flex-1 rounded-xl bg-white px-3 py-3 text-sm font-medium text-neutral-900 shadow-lg ring-1 ring-neutral-200 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
         >
           ✚ Add a place
+        </button>
+        <button
+          type="button"
+          onClick={onFilters}
+          aria-label={`Filters${activeFilterCount > 0 ? ` (${activeFilterCount} active)` : ""}`}
+          className="relative w-12 rounded-xl bg-white px-3 py-3 text-sm font-medium text-neutral-900 shadow-lg ring-1 ring-neutral-200 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+        >
+          ⚙
+          {activeFilterCount > 0 ? (
+            <span
+              aria-hidden="true"
+              className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-xs font-semibold text-white"
+            >
+              {activeFilterCount}
+            </span>
+          ) : null}
         </button>
       </div>
     </div>

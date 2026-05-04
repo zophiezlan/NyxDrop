@@ -470,21 +470,24 @@ function generateReports(narrative: SeedLocation["narrative"]): {
         { reportType: "success", hoursAgo: 14 * DAY, barriers: [] },
       ];
     case "mostly_denied":
+      // Tuned so id_required crosses the 40% "frequent" threshold over the
+      // last 30 days (5/10 = 50%). Drives the headline-barrier filter demo
+      // and the "ID often asked recently" detail-sheet fact.
       return [
-        { reportType: "denied", hoursAgo: 5 * HOUR, barriers: ["prescription_required"] },
+        { reportType: "denied", hoursAgo: 5 * HOUR, barriers: ["id_required", "prescription_required"] },
         {
           reportType: "denied",
           hoursAgo: 1 * DAY,
           barriers: ["id_required", "medicare_required"],
           notes: "They refused without a Medicare card.",
         },
-        { reportType: "denied", hoursAgo: 1 * DAY + 8 * HOUR, barriers: ["staff_rude"] },
+        { reportType: "denied", hoursAgo: 1 * DAY + 8 * HOUR, barriers: ["id_required", "staff_rude"] },
         {
           reportType: "success_but",
           hoursAgo: 2 * DAY + 4 * HOUR,
-          barriers: ["medicare_required", "many_questions"],
+          barriers: ["id_required", "medicare_required", "many_questions"],
         },
-        { reportType: "denied", hoursAgo: 4 * DAY, barriers: ["age_restriction"] },
+        { reportType: "denied", hoursAgo: 4 * DAY, barriers: ["id_required", "age_restriction"] },
         { reportType: "out_of_stock", hoursAgo: 5 * DAY, barriers: [] },
         { reportType: "denied", hoursAgo: 7 * DAY, barriers: ["prescription_required"] },
         { reportType: "denied", hoursAgo: 9 * DAY, barriers: ["staff_rude", "many_questions"] },

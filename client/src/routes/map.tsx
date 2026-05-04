@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation as useWouterLocation } from "wouter";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { useLocations } from "@/hooks/use-locations";
@@ -6,10 +6,20 @@ import { useMode } from "@/hooks/use-mode";
 import { useOfflineReportDrain } from "@/hooks/use-report";
 import { OnboardingOverlay } from "@/components/shared/OnboardingOverlay";
 import { BottomActionBar } from "@/components/shared/BottomActionBar";
+import { ModeToggle } from "@/components/shared/ModeToggle";
 import { Toast } from "@/components/shared/Toast";
 import { DetailSheet } from "@/components/sheets/DetailSheet";
 import { ReportSheet } from "@/components/sheets/ReportSheet";
 import { MyPlacesSheet } from "@/components/sheets/MyPlacesSheet";
+import {
+  EMPTY_FILTERS,
+  FilterSheet,
+  activeFilterCount,
+  type Filters,
+} from "@/components/sheets/FilterSheet";
+import { NowModeOverlay } from "@/components/now-mode/NowModeOverlay";
+import { filterByAbsenceOfBarriers } from "@shared/consensus";
+import type { LocationWithConsensus } from "@shared/schema";
 
 const InteractiveMap = lazy(() =>
   import("@/components/map/InteractiveMap").then((m) => ({ default: m.InteractiveMap })),
@@ -38,6 +48,8 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
   const [selectedId, setSelectedId] = useState<string | null>(sheetId ?? null);
   const [reportState, setReportState] = useState<ReportState | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   // Drain offline-queued reports as soon as connectivity returns. Mounted
   // here (route-level) so it survives sheet open/close.
@@ -71,7 +83,62 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
   const locationsQuery = useLocations({
     lat: geo.position.lat,
     lon: geo.position.lon,
+    type: filters.type.length > 0 ? filters.type : undefined,
+    verification: filters.verification.length > 0 ? filters.verification : undefined,
+    recent: filters.recent || undefined,
+    openNow: filters.openNow || undefined,
   });
+
+  // Ctrl+E (or Cmd+E on Mac) toggles Now mode from anywhere in the app.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "e") {
+        e.preventDefault();
+        setMode(mode === "now" ? "plan" : "now");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mode, setMode]);
+
+  // Compose all the client-side filters: barrier-hide (algorithms.md §4),
+  // naloxone form, accessibility tags. Server already applied type, verif,
+  // recent, openNow query params.
+  const visibleLocations: LocationWithConsensus[] = useMemo(() => {
+    const all = locationsQuery.data ?? [];
+    let next = filterByAbsenceOfBarriers(all, filters.hideBarriers);
+
+    if (filters.naloxoneForm !== "any") {
+      next = next.filter((loc) =>
+        loc.naloxoneForms.includes(filters.naloxoneForm as "nasal_spray" | "injectable"),
+      );
+    }
+    if (filters.tags.length > 0) {
+      next = next.filter((loc) =>
+        filters.tags.every((t) => loc.tags.includes(t)),
+      );
+    }
+
+    // In Now mode hide red/grey pins (spec.md §4.1) — they're not what the
+    // user needs in a crisis. The map keeps the same centre and zoom; only
+    // the visible pin set changes.
+    if (mode === "now") {
+      next = next.filter(
+        (loc) => loc.pinStatus === "green" || loc.pinStatus === "amber",
+      );
+    }
+    return next;
+  }, [mode, locationsQuery.data, filters]);
+
+  const hiddenByBarrierCount = useMemo(() => {
+    if (filters.hideBarriers.length === 0) return 0;
+    const total = locationsQuery.data?.length ?? 0;
+    const after = filterByAbsenceOfBarriers(
+      locationsQuery.data ?? [],
+      filters.hideBarriers,
+    ).length;
+    return total - after;
+  }, [filters.hideBarriers, locationsQuery.data]);
 
   const handleSelect = useCallback(
     (id: string) => {
@@ -124,9 +191,10 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
         <InteractiveMap
           centre={geo.position}
           userPosition={geo.isFallback ? undefined : geo.position}
-          locations={locationsQuery.data ?? []}
+          locations={visibleLocations}
           selectedId={selectedId}
           onSelect={handleSelect}
+          autoFitMode={mode === "now" ? "nearest-3" : "default"}
         />
       </Suspense>
 
@@ -146,6 +214,7 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
         <DetailSheet
           locationId={selectedId}
           geo={geo.isFallback ? undefined : geo.position}
+          mode={mode}
           onClose={handleClose}
           onReport={openReportForCurrent}
         />
@@ -170,18 +239,53 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
       ) : null}
 
       <BottomActionBar
-        hidden={!!selectedId || !!reportState || openSheet === "my-places" || mode === "now"}
+        hidden={
+          !!selectedId ||
+          !!reportState ||
+          openSheet === "my-places" ||
+          filterSheetOpen ||
+          mode === "now"
+        }
         onIWentHere={() => {
           // Without a pre-selected pin, drop the user into the search step.
           openAddPlace();
         }}
         onAddPlace={openAddPlace}
+        onFilters={() => setFilterSheetOpen(true)}
+        activeFilterCount={activeFilterCount(filters)}
       />
 
       <TopRightButtons
         hidden={!!selectedId || !!reportState || openSheet === "my-places" || mode === "now"}
         onMyPlaces={() => navigate("/me")}
       />
+
+      <ModeToggle
+        mode={mode}
+        onChange={setMode}
+        hidden={mode === "now" || !!reportState || openSheet === "my-places"}
+      />
+
+      {mode === "now" ? (
+        <NowModeOverlay onExit={() => setMode("plan")} />
+      ) : null}
+
+      {filterSheetOpen ? (
+        <FilterSheet
+          value={filters}
+          onChange={setFilters}
+          onClose={() => setFilterSheetOpen(false)}
+          onReset={() => setFilters(EMPTY_FILTERS)}
+        />
+      ) : null}
+
+      {hiddenByBarrierCount > 0 && mode !== "now" ? (
+        <HiddenByBarrierChip
+          count={hiddenByBarrierCount}
+          barriers={filters.hideBarriers}
+          onClear={() => setFilters({ ...filters, hideBarriers: [] })}
+        />
+      ) : null}
 
       <OnboardingOverlay />
     </div>
@@ -194,6 +298,57 @@ function MapPlaceholder() {
       Loading the map…
     </div>
   );
+}
+
+function HiddenByBarrierChip({
+  count,
+  barriers,
+  onClear,
+}: {
+  count: number;
+  barriers: string[];
+  onClear: () => void;
+}) {
+  // The first selected barrier drives the chip text; if multiple barriers
+  // are active, fall back to a count-only phrasing.
+  const phrase =
+    barriers.length === 1
+      ? phraseForBarrier(barriers[0]!)
+      : `${barriers.length} soft barrier filters active`;
+  return (
+    <div className="fixed inset-x-3 top-3 z-30 flex items-center justify-center pointer-events-none">
+      <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs text-blue-900 shadow-md ring-1 ring-blue-200">
+        <span>
+          Hiding {count} {count === 1 ? "place" : "places"} — {phrase}
+        </span>
+        <button
+          type="button"
+          onClick={onClear}
+          aria-label="Clear barrier filters"
+          className="ml-1 rounded-full px-1 text-blue-700 hover:bg-blue-100 focus:outline-none focus:ring-1 focus:ring-blue-700"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function phraseForBarrier(b: string): string {
+  switch (b) {
+    case "id_required":
+      return "ID often asked recently";
+    case "medicare_required":
+      return "Medicare often asked recently";
+    case "cost_involved":
+      return "charged recently";
+    case "staff_rude":
+      return "staff attitude flagged recently";
+    case "long_wait":
+      return "long waits recently";
+    default:
+      return b.replace(/_/g, " ");
+  }
 }
 
 function TopRightButtons({

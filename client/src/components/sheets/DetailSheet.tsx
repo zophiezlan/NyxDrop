@@ -22,6 +22,8 @@ import type {
 interface DetailSheetProps {
   locationId: string;
   geo?: { lat: number; lon: number };
+  /** Plan = full layout. Now = minimal sheet (spec.md §4.2). */
+  mode?: "plan" | "now";
   onClose: () => void;
   onReport: () => void;
 }
@@ -53,7 +55,13 @@ function reportLineForRow(r: Report): string {
   return `${base} — ${r.barriers.join(", ").replace(/_/g, " ")}`;
 }
 
-export function DetailSheet({ locationId, geo, onClose, onReport }: DetailSheetProps) {
+export function DetailSheet({
+  locationId,
+  geo,
+  mode = "plan",
+  onClose,
+  onReport,
+}: DetailSheetProps) {
   const detailQuery = useLocationDetail(locationId, geo);
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -88,6 +96,8 @@ export function DetailSheet({ locationId, geo, onClose, onReport }: DetailSheetP
           <SheetSkeleton />
         ) : detailQuery.isError || !detailQuery.data ? (
           <SheetError onClose={onClose} />
+        ) : mode === "now" ? (
+          <SheetBodyNow location={detailQuery.data} />
         ) : (
           <SheetBody location={detailQuery.data} onReport={onReport} />
         )}
@@ -195,6 +205,63 @@ function SheetBody({
       <BarrierFactsList facts={location.barrierFacts} />
       <RecentReports reports={location.recentReports} total={location.totalReportsCount} />
       <Actions location={location} onReport={onReport} />
+    </>
+  );
+}
+
+/**
+ * Minimal Now-mode sheet (spec.md §4.2). No stars, no timeline, no save —
+ * don't tax a person in crisis with information they can't act on.
+ */
+function SheetBodyNow({ location }: { location: LocationWithConsensus }) {
+  const status = STATUS_DOT[location.pinStatus];
+  const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
+  const formList = location.naloxoneForms.map((f) =>
+    f === "nasal_spray" ? "Nasal spray" : "Injectable",
+  );
+  return (
+    <>
+      <header>
+        <h2 id="detail-name" className="text-lg font-semibold leading-tight">
+          {location.name}
+        </h2>
+        <p className="mt-1 text-sm text-neutral-700">
+          {location.distance !== undefined ? `${formatDistanceKm(location.distance)} away` : null}
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${status.tone}`}
+          >
+            <span aria-hidden="true">{status.symbol}</span>
+            {location.consensusLabel}
+          </span>
+          <span className="text-xs text-neutral-700">
+            {formList.join(" + ")}
+          </span>
+        </div>
+      </header>
+      <div className="mt-5 grid grid-cols-2 gap-2 text-sm">
+        <a
+          href={directionsHref}
+          target="_blank"
+          rel="noreferrer"
+          className="rounded-xl bg-neutral-900 px-3 py-3 text-center text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+        >
+          ↗ Directions
+        </a>
+        {location.phone ? (
+          <a
+            href={`tel:${location.phone}`}
+            className="rounded-xl border border-neutral-300 px-3 py-3 text-center text-neutral-900 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+          >
+            📞 Call this place
+          </a>
+        ) : (
+          <span className="rounded-xl border border-neutral-200 px-3 py-3 text-center text-neutral-400">
+            No phone listed
+          </span>
+        )}
+      </div>
     </>
   );
 }
