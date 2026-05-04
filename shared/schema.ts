@@ -278,6 +278,9 @@ export const watches = pgTable(
       .notNull(),
     alertOnStatusChange: boolean("alert_on_status_change").notNull().default(true),
     alertOnGuardianNote: boolean("alert_on_guardian_note").notNull().default(true),
+    // Per algorithms.md §9.2: at most one alert per (device, location) per 6h.
+    // Updated whenever a notification is enqueued for this watch.
+    lastAlertAt: timestamp("last_alert_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => ({

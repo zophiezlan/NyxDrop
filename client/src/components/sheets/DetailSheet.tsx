@@ -1,6 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useLocation as useLocationDetail } from "@/hooks/use-locations";
 import { formatAud, formatDistanceKm, relativeTime } from "@/lib/format";
+import {
+  useSaveLocation,
+  useSavedPlaces,
+  useUnsaveLocation,
+} from "@/hooks/use-saved-places";
+import {
+  useUnwatchLocation,
+  useWatchLocation,
+  useWatches,
+} from "@/hooks/use-watches";
+import { usePushSubscription } from "@/hooks/use-push";
 import type {
   BarrierFact,
   LocationWithConsensus,
@@ -366,6 +377,48 @@ function Actions({
   onReport: () => void;
 }) {
   const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
+  const saved = useSavedPlaces();
+  const watches = useWatches();
+  const save = useSaveLocation();
+  const unsave = useUnsaveLocation();
+  const watch = useWatchLocation();
+  const unwatch = useUnwatchLocation();
+  const push = usePushSubscription();
+
+  const savedRow = useMemo(
+    () => saved.data?.find((row) => row.locationId === location.id) ?? null,
+    [saved.data, location.id],
+  );
+  const watchRow = useMemo(
+    () => watches.data?.find((row) => row.locationId === location.id) ?? null,
+    [watches.data, location.id],
+  );
+
+  const handleSaveToggle = () => {
+    if (savedRow) unsave.mutate(savedRow.id);
+    else save.mutate({ locationId: location.id });
+  };
+
+  const handleWatchToggle = async () => {
+    if (watchRow) {
+      unwatch.mutate(watchRow.id);
+      return;
+    }
+    // Pre-prompt before browser permission ask is the *creation* of the
+    // watch entry — it implicitly says "yes, I want notifications about
+    // this place." Then we ask the OS for the permission.
+    watch.mutate(
+      { locationId: location.id },
+      {
+        onSuccess: () => {
+          if (push.permission === "default") void push.requestAndSubscribe();
+          else if (push.permission === "granted" && !push.isSubscribed)
+            void push.requestAndSubscribe();
+        },
+      },
+    );
+  };
+
   return (
     <section className="mt-6 space-y-3">
       <div className="grid grid-cols-3 gap-2 text-sm">
@@ -379,21 +432,31 @@ function Actions({
         </button>
         <button
           type="button"
-          disabled
-          className="rounded-xl border border-neutral-300 px-3 py-2 text-neutral-400"
-          aria-label="Save (Phase 4)"
-          title="Lands in Phase 4"
+          onClick={handleSaveToggle}
+          disabled={save.isPending || unsave.isPending}
+          aria-pressed={!!savedRow}
+          aria-label={savedRow ? `Unsave ${location.name}` : `Save ${location.name}`}
+          className={`rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900 ${
+            savedRow
+              ? "bg-neutral-900 text-white border-neutral-900"
+              : "border-neutral-300 text-neutral-900 hover:bg-neutral-50"
+          }`}
         >
-          🔖 Save
+          {savedRow ? "🔖 Saved" : "🔖 Save"}
         </button>
         <button
           type="button"
-          disabled
-          className="rounded-xl border border-neutral-300 px-3 py-2 text-neutral-400"
-          aria-label="Watch (Phase 4)"
-          title="Lands in Phase 4"
+          onClick={handleWatchToggle}
+          disabled={watch.isPending || unwatch.isPending}
+          aria-pressed={!!watchRow}
+          aria-label={watchRow ? `Stop watching ${location.name}` : `Watch ${location.name}`}
+          className={`rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900 ${
+            watchRow
+              ? "bg-neutral-900 text-white border-neutral-900"
+              : "border-neutral-300 text-neutral-900 hover:bg-neutral-50"
+          }`}
         >
-          🔔 Watch
+          {watchRow ? "🔔 Watching" : "🔔 Watch"}
         </button>
       </div>
       <a

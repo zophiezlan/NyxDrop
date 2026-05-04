@@ -1,8 +1,16 @@
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db, schema } from "./db.js";
 import { checkReportAllowed, recordReport } from "./rate-limit.js";
-import { calculateReliabilityScore } from "@shared/consensus";
+import { sendPushToWatchers } from "./push.js";
+import { logger } from "./logger.js";
+import {
+  calculatePinStatus,
+  calculateReliabilityScore,
+  classifyPinFlip,
+} from "@shared/consensus";
 import type { InsertReport, Report, ReportType } from "@shared/schema";
+
+const SEVENTY_TWO_HOURS_MS = 72 * 60 * 60 * 1000;
 
 export type ReportSubmissionResult =
   | { ok: true; report: Report; ackMessage: string }
@@ -29,6 +37,11 @@ export async function submitReport(
     };
   }
 
+  // Capture pin status BEFORE the new report so we can detect a meaningful
+  // flip and notify watchers (algorithms.md §9). We use the same 72h window
+  // as `composeLocationWithConsensus`.
+  const before = await getPinStatusFor(insert.locationId, now);
+
   // Insert the report.
   const [created] = await db
     .insert(schema.reports)
@@ -40,9 +53,68 @@ export async function submitReport(
   await recomputeLocationAggregates(insert.locationId);
   await bumpDailyMetrics(insert.reportType, now);
 
+  // Fire-and-forget the watch alerts so we don't block the response on push
+  // delivery (which can take seconds).
+  void notifyOnFlip(insert.locationId, before, now).catch((err: unknown) =>
+    logger.warn({ err, locationId: insert.locationId }, "watch alert dispatch failed"),
+  );
+
   const ackMessage = await buildAckMessage(now);
 
   return { ok: true, report: created, ackMessage };
+}
+
+interface PinStatusSnapshot {
+  status: ReturnType<typeof calculatePinStatus>["status"];
+  label: string;
+  locationName: string;
+}
+
+async function getPinStatusFor(
+  locationId: string,
+  now: Date,
+): Promise<PinStatusSnapshot | null> {
+  const cutoff = new Date(now.getTime() - SEVENTY_TWO_HOURS_MS);
+  const recent = await db
+    .select()
+    .from(schema.reports)
+    .where(
+      and(
+        eq(schema.reports.locationId, locationId),
+        gte(schema.reports.submittedAt, cutoff),
+      ),
+    );
+  const result = calculatePinStatus(recent, now);
+  const [loc] = await db
+    .select({ name: schema.locations.name })
+    .from(schema.locations)
+    .where(eq(schema.locations.id, locationId))
+    .limit(1);
+  return {
+    status: result.status,
+    label: result.label,
+    locationName: loc?.name ?? "Unknown",
+  };
+}
+
+async function notifyOnFlip(
+  locationId: string,
+  before: PinStatusSnapshot | null,
+  now: Date,
+): Promise<void> {
+  if (!before) return;
+  const after = await getPinStatusFor(locationId, now);
+  if (!after) return;
+  const flip = classifyPinFlip(before.status, after.status);
+  if (flip === "no_meaningful_flip") return;
+  await sendPushToWatchers(
+    locationId,
+    flip,
+    before.status,
+    after.status,
+    after.label,
+    after.locationName,
+  );
 }
 
 /**

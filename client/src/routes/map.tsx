@@ -9,6 +9,7 @@ import { BottomActionBar } from "@/components/shared/BottomActionBar";
 import { Toast } from "@/components/shared/Toast";
 import { DetailSheet } from "@/components/sheets/DetailSheet";
 import { ReportSheet } from "@/components/sheets/ReportSheet";
+import { MyPlacesSheet } from "@/components/sheets/MyPlacesSheet";
 
 const InteractiveMap = lazy(() =>
   import("@/components/map/InteractiveMap").then((m) => ({ default: m.InteractiveMap })),
@@ -50,6 +51,11 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
     } else if (openSheet === "report" && sheetId) {
       setReportState({ locationId: sheetId });
       setSelectedId(null);
+    } else if (openSheet === "my-places") {
+      // /me opens the MyPlacesSheet on top of the map; close any detail or
+      // report sheet that was open so the user actually sees it.
+      setSelectedId(null);
+      setReportState(null);
     } else if (!openSheet) {
       setSelectedId(null);
       setReportState(null);
@@ -127,7 +133,13 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
       {locationsQuery.isError ? <ApiBanner /> : null}
 
       {openSheet === "my-places" ? (
-        <SheetPlaceholder kind="my-places" onClose={handleClose} />
+        <MyPlacesSheet
+          onClose={handleClose}
+          onOpenLocation={(id) => {
+            setSelectedId(id);
+            navigate(`/m/${id}`);
+          }}
+        />
       ) : null}
 
       {selectedId ? (
@@ -158,12 +170,17 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
       ) : null}
 
       <BottomActionBar
-        hidden={!!selectedId || !!reportState || mode === "now"}
+        hidden={!!selectedId || !!reportState || openSheet === "my-places" || mode === "now"}
         onIWentHere={() => {
           // Without a pre-selected pin, drop the user into the search step.
           openAddPlace();
         }}
         onAddPlace={openAddPlace}
+      />
+
+      <TopRightButtons
+        hidden={!!selectedId || !!reportState || openSheet === "my-places" || mode === "now"}
+        onMyPlaces={() => navigate("/me")}
       />
 
       <OnboardingOverlay />
@@ -179,6 +196,29 @@ function MapPlaceholder() {
   );
 }
 
+function TopRightButtons({
+  hidden,
+  onMyPlaces,
+}: {
+  hidden: boolean;
+  onMyPlaces: () => void;
+}) {
+  if (hidden) return null;
+  return (
+    <div className="fixed top-3 right-3 z-20 flex gap-2">
+      <button
+        type="button"
+        onClick={onMyPlaces}
+        aria-label="My Places"
+        title="My Places"
+        className="rounded-full bg-white shadow-lg ring-1 ring-neutral-200 w-11 h-11 text-lg flex items-center justify-center hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+      >
+        👤
+      </button>
+    </div>
+  );
+}
+
 function ApiBanner() {
   return (
     <div
@@ -190,32 +230,3 @@ function ApiBanner() {
   );
 }
 
-/**
- * Placeholder for sheets not yet implemented (My Places — Phase 4).
- */
-function SheetPlaceholder({
-  kind,
-  onClose,
-}: {
-  kind: "my-places";
-  onClose: () => void;
-}) {
-  const label = kind === "my-places" ? "My Places" : kind;
-  return (
-    <aside
-      role="dialog"
-      aria-modal="false"
-      className="fixed inset-x-0 bottom-0 z-30 rounded-t-2xl border-t bg-white p-5 shadow-2xl"
-    >
-      <h2 className="text-lg font-semibold">{label}</h2>
-      <p className="mt-2 text-sm text-neutral-600">Lands in Phase 4.</p>
-      <button
-        type="button"
-        className="mt-4 rounded-lg border px-3 py-1.5 text-xs"
-        onClick={onClose}
-      >
-        Close
-      </button>
-    </aside>
-  );
-}

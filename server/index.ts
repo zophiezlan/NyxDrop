@@ -6,6 +6,7 @@ import { securityHeaders } from "./lib/security-headers.js";
 import { setupVite, serveStatic } from "./lib/vite.js";
 import { logger } from "./lib/logger.js";
 import { startWeightDecayScheduler } from "./jobs/decay-weights.js";
+import { initialisePush } from "./lib/push.js";
 
 const isProd = process.env.NODE_ENV === "production";
 const port = Number.parseInt(process.env.PORT ?? "5000", 10);
@@ -31,6 +32,7 @@ async function main(): Promise<void> {
   }
 
   startWeightDecayScheduler();
+  initialisePush();
 }
 
 main().catch((err: unknown) => {
