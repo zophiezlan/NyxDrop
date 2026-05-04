@@ -1,0 +1,7 @@
+dist/
+node_modules/
+.vite/
+playwright-report/
+test-results/
+client/public/locales/
+*.md

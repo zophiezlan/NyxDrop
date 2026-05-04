@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+
+# build artefacts
+*.tsbuildinfo
+.vite/
+.cache/
+
+# test artefacts
+coverage/
+playwright-report/
+test-results/
+.playwright/
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.log
+npm-debug.log*
+
+# local
+.drizzle/
+.claude/settings.local.json
