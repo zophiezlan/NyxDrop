@@ -70,7 +70,11 @@ export function InteractiveMap({
     <MapContainer
       center={[centre.lat, centre.lon]}
       zoom={13}
-      className="h-dvh w-dvw"
+      // `isolate` (`isolation: isolate`) forces a new stacking context on the
+      // leaflet-container so its internal pane z-indices (tile=200, marker=600,
+      // popup=700, etc.) don't leak into the parent stacking context and paint
+      // over our fixed overlays/sheets.
+      className="h-dvh w-dvw isolate"
       zoomControl={false}
       ref={mapRef}
     >
