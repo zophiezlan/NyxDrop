@@ -1,5 +1,6 @@
 import type { Express, NextFunction, Request, Response } from "express";
 import locationsRouter from "./locations.js";
+import reportsRouter from "./reports.js";
 import { logger } from "../lib/logger.js";
 
 export function registerRoutes(app: Express): void {
@@ -8,6 +9,7 @@ export function registerRoutes(app: Express): void {
   });
 
   app.use(locationsRouter);
+  app.use(reportsRouter);
 
   // 404 for unmatched /api routes — anything else falls through to the SPA.
   app.use("/api", (_req, res) => {

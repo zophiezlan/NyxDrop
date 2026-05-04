@@ -1,5 +1,8 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
+import { and, eq, gte, sql } from "drizzle-orm";
 import { z } from "zod";
+import { insertLocationSchema, insertCorrectionSchema } from "@shared/schema";
+import { db, schema } from "../lib/db.js";
 import {
   getLocationsWithConsensus,
   getLocationWithConsensus,
@@ -133,6 +136,122 @@ router.get("/api/locations", async (req, res, next) => {
     res.json(results);
   } catch (err) {
     logger.error({ err }, "GET /api/locations failed");
+    next(err);
+  }
+});
+
+// -----------------------------------------------------------------------------
+// POST /api/locations — add-a-place flow
+// -----------------------------------------------------------------------------
+
+const DAILY_NEW_LOCATION_LIMIT = 5;
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+function getDeviceKey(req: Request): string | null {
+  const v = req.header("x-device-key");
+  if (!v || typeof v !== "string" || v.length < 16) return null;
+  return v;
+}
+
+router.post("/api/locations", async (req, res, next) => {
+  try {
+    const deviceKey = getDeviceKey(req);
+    if (!deviceKey) {
+      res.status(400).json({
+        error: "Missing or invalid X-Device-Key header",
+        code: "BAD_DEVICE_KEY",
+      });
+      return;
+    }
+
+    const parsed = insertLocationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: "Invalid location data",
+        code: "VALIDATION_FAILED",
+        fields: parsed.error.flatten().fieldErrors,
+      });
+      return;
+    }
+
+    // Rate limit: 5 new locations per device per 24h.
+    const cutoff = new Date(Date.now() - ONE_DAY_MS);
+    const recent = await db
+      .select({ count: sql<number>`COUNT(*)::int` })
+      .from(schema.locations)
+      .where(
+        and(
+          eq(schema.locations.addedByDeviceKey, deviceKey),
+          gte(schema.locations.addedAt, cutoff),
+        ),
+      );
+    if ((recent[0]?.count ?? 0) >= DAILY_NEW_LOCATION_LIMIT) {
+      res.status(429).json({
+        error: "You have added the maximum new places for today.",
+        code: "RATE_LIMITED",
+      });
+      return;
+    }
+
+    const [created] = await db
+      .insert(schema.locations)
+      .values({ ...parsed.data, addedByDeviceKey: deviceKey })
+      .returning();
+    if (!created) throw new Error("location insert returned no row");
+
+    // Bump daily metrics so /about's locationsAdded counter advances.
+    const today = new Date();
+    const ymd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    await db
+      .insert(schema.dailyMetrics)
+      .values({ date: ymd, locationsAdded: 1 })
+      .onConflictDoUpdate({
+        target: schema.dailyMetrics.date,
+        set: {
+          locationsAdded: sql`${schema.dailyMetrics.locationsAdded} + 1`,
+        },
+      });
+
+    res.status(201).json(created);
+  } catch (err) {
+    logger.error({ err }, "POST /api/locations failed");
+    next(err);
+  }
+});
+
+// -----------------------------------------------------------------------------
+// POST /api/locations/:id/correction — moderation queue
+// -----------------------------------------------------------------------------
+
+router.post("/api/locations/:id/correction", async (req, res, next) => {
+  try {
+    const deviceKey = getDeviceKey(req);
+    if (!deviceKey) {
+      res.status(400).json({
+        error: "Missing or invalid X-Device-Key header",
+        code: "BAD_DEVICE_KEY",
+      });
+      return;
+    }
+    const parsed = insertCorrectionSchema.safeParse({
+      locationId: req.params.id,
+      text: (req.body ?? {}).text,
+    });
+    if (!parsed.success) {
+      res.status(400).json({
+        error: "Invalid correction",
+        code: "VALIDATION_FAILED",
+        fields: parsed.error.flatten().fieldErrors,
+      });
+      return;
+    }
+    await db.insert(schema.corrections).values({
+      locationId: req.params.id,
+      deviceKey,
+      text: parsed.data.text,
+    });
+    res.status(202).json({ ok: true });
+  } catch (err) {
     next(err);
   }
 });

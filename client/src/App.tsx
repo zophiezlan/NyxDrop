@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation, useRoute } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const MapRoute = lazy(() => import("./routes/map.js"));
@@ -23,25 +23,40 @@ function MapLoading() {
   );
 }
 
+/**
+ * Single-mount MapRoute wrapper — reads the URL itself so wouter never has to
+ * unmount/remount it when the user navigates between `/`, `/m/:id`, `/r/:id`,
+ * `/me`, and `/emergency`. Keeping the same React tree across these routes
+ * preserves transient state like toasts and selected-pin focus.
+ */
+function MapRouteHost() {
+  const [path] = useLocation();
+  const [matchM, paramsM] = useRoute("/m/:id");
+  const [matchR, paramsR] = useRoute("/r/:id");
+
+  if (matchM && paramsM?.id) {
+    return <MapRoute openSheet="detail" sheetId={paramsM.id} />;
+  }
+  if (matchR && paramsR?.id) {
+    return <MapRoute openSheet="report" sheetId={paramsR.id === "new" ? undefined : paramsR.id} />;
+  }
+  if (path === "/me") {
+    return <MapRoute openSheet="my-places" />;
+  }
+  if (path === "/emergency") {
+    return <MapRoute forceMode="now" />;
+  }
+  return <MapRoute />;
+}
+
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={<MapLoading />}>
         <Switch>
           <Route path="/about" component={AboutRoute} />
-          <Route path="/m/:id">{(params) => <MapRoute openSheet="detail" sheetId={params.id} />}</Route>
-          <Route path="/r/:id">{(params) => <MapRoute openSheet="report" sheetId={params.id} />}</Route>
-          <Route path="/me">
-            <MapRoute openSheet="my-places" />
-          </Route>
-          <Route path="/emergency">
-            <MapRoute forceMode="now" />
-          </Route>
-          <Route path="/">
-            <MapRoute />
-          </Route>
           <Route>
-            <MapRoute />
+            <MapRouteHost />
           </Route>
         </Switch>
       </Suspense>

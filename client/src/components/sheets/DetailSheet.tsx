@@ -12,6 +12,7 @@ interface DetailSheetProps {
   locationId: string;
   geo?: { lat: number; lon: number };
   onClose: () => void;
+  onReport: () => void;
 }
 
 const STATUS_DOT: Record<PinStatus, { tone: string; symbol: string }> = {
@@ -41,7 +42,7 @@ function reportLineForRow(r: Report): string {
   return `${base} — ${r.barriers.join(", ").replace(/_/g, " ")}`;
 }
 
-export function DetailSheet({ locationId, geo, onClose }: DetailSheetProps) {
+export function DetailSheet({ locationId, geo, onClose, onReport }: DetailSheetProps) {
   const detailQuery = useLocationDetail(locationId, geo);
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -77,7 +78,7 @@ export function DetailSheet({ locationId, geo, onClose }: DetailSheetProps) {
         ) : detailQuery.isError || !detailQuery.data ? (
           <SheetError onClose={onClose} />
         ) : (
-          <SheetBody location={detailQuery.data} />
+          <SheetBody location={detailQuery.data} onReport={onReport} />
         )}
 
         <div className="mt-6 flex justify-end">
@@ -124,7 +125,13 @@ function SheetError({ onClose }: { onClose: () => void }) {
   );
 }
 
-function SheetBody({ location }: { location: LocationWithConsensus }) {
+function SheetBody({
+  location,
+  onReport,
+}: {
+  location: LocationWithConsensus;
+  onReport: () => void;
+}) {
   const status = STATUS_DOT[location.pinStatus];
   return (
     <>
@@ -176,7 +183,7 @@ function SheetBody({ location }: { location: LocationWithConsensus }) {
       <Facts location={location} />
       <BarrierFactsList facts={location.barrierFacts} />
       <RecentReports reports={location.recentReports} total={location.totalReportsCount} />
-      <Actions location={location} />
+      <Actions location={location} onReport={onReport} />
     </>
   );
 }
@@ -351,17 +358,22 @@ function RecentReports({
   );
 }
 
-function Actions({ location }: { location: LocationWithConsensus }) {
+function Actions({
+  location,
+  onReport,
+}: {
+  location: LocationWithConsensus;
+  onReport: () => void;
+}) {
   const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
   return (
     <section className="mt-6 space-y-3">
       <div className="grid grid-cols-3 gap-2 text-sm">
         <button
           type="button"
-          disabled
-          className="rounded-xl border border-neutral-300 px-3 py-2 text-neutral-400"
-          aria-label="I went here (Phase 2)"
-          title="Lands in Phase 2"
+          onClick={onReport}
+          className="rounded-xl border border-neutral-300 px-3 py-2 text-neutral-900 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+          aria-label="Report a visit to this place"
         >
           ⊕ I went here
         </button>

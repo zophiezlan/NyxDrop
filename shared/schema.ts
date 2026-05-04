@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   date,
   decimal,
   integer,
@@ -177,6 +178,190 @@ export const deviceReports = pgTable(
 );
 
 // =============================================================================
+// guardians — vetted community partners (the only authenticated identity)
+// =============================================================================
+
+export const guardians = pgTable("guardians", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull().unique(),
+  organisation: text("organisation").notNull(),
+  affiliatedLocationIds: jsonb("affiliated_location_ids")
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  isAdmin: boolean("is_admin").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// =============================================================================
+// guardian_tokens — bcrypt-hashed login tokens
+// =============================================================================
+
+export const guardianTokens = pgTable("guardian_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  guardianId: varchar("guardian_id")
+    .references(() => guardians.id, { onDelete: "cascade" })
+    .notNull(),
+  tokenHash: text("token_hash").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  revokedAt: timestamp("revoked_at"),
+  lastUsedAt: timestamp("last_used_at"),
+});
+
+// =============================================================================
+// guardian_sessions — server-side session storage for guardian admin auth
+// =============================================================================
+
+export const guardianSessions = pgTable("guardian_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  guardianId: varchar("guardian_id")
+    .references(() => guardians.id, { onDelete: "cascade" })
+    .notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// =============================================================================
+// guardian_notes — signed human context attached to locations
+// =============================================================================
+
+export const guardianNotes = pgTable("guardian_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  locationId: varchar("location_id")
+    .references(() => locations.id, { onDelete: "cascade" })
+    .notNull(),
+  guardianId: varchar("guardian_id")
+    .references(() => guardians.id, { onDelete: "cascade" })
+    .notNull(),
+  noteText: text("note_text").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  archivedAt: timestamp("archived_at"),
+});
+
+// =============================================================================
+// saved_places — user's saved locations (My Places "Saved" tab)
+// =============================================================================
+
+export const savedPlaces = pgTable(
+  "saved_places",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    deviceKey: text("device_key").notNull(),
+    locationId: varchar("location_id")
+      .references(() => locations.id, { onDelete: "cascade" })
+      .notNull(),
+    personalLabel: text("personal_label"),
+    personalNote: text("personal_note"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    uniq: uniqueIndex("saved_places_uniq").on(t.deviceKey, t.locationId),
+  }),
+);
+
+// =============================================================================
+// watches — per-device, per-location watch with notification preferences
+// =============================================================================
+
+export const watches = pgTable(
+  "watches",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    deviceKey: text("device_key").notNull(),
+    locationId: varchar("location_id")
+      .references(() => locations.id, { onDelete: "cascade" })
+      .notNull(),
+    alertOnStatusChange: boolean("alert_on_status_change").notNull().default(true),
+    alertOnGuardianNote: boolean("alert_on_guardian_note").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    uniq: uniqueIndex("watches_uniq").on(t.deviceKey, t.locationId),
+  }),
+);
+
+// =============================================================================
+// push_subscriptions — Web Push (VAPID) endpoints
+// =============================================================================
+
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  deviceKey: text("device_key").notNull(),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dhKey: text("p256dh_key").notNull(),
+  authKey: text("auth_key").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  lastSuccessAt: timestamp("last_success_at"),
+  lastFailureAt: timestamp("last_failure_at"),
+});
+
+// =============================================================================
+// daily_metrics — aggregate counters powering /about's three numbers
+// =============================================================================
+
+export const dailyMetrics = pgTable("daily_metrics", {
+  date: date("date").primaryKey(),
+  reportsSubmitted: integer("reports_submitted").notNull().default(0),
+  locationsAdded: integer("locations_added").notNull().default(0),
+  notesPosted: integer("notes_posted").notNull().default(0),
+  successfulReports: integer("successful_reports").notNull().default(0),
+});
+
+// =============================================================================
+// corrections — moderation queue for user-submitted location corrections
+// =============================================================================
+
+export const corrections = pgTable("corrections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  locationId: varchar("location_id")
+    .references(() => locations.id, { onDelete: "cascade" })
+    .notNull(),
+  deviceKey: text("device_key").notNull(),
+  text: text("text").notNull(),
+  status: text("status", { enum: ["pending", "actioned", "dismissed"] })
+    .notNull()
+    .default("pending"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewedByGuardianId: varchar("reviewed_by_guardian_id").references(
+    () => guardians.id,
+    { onDelete: "set null" },
+  ),
+});
+
+// =============================================================================
+// audit_log — append-only record of admin actions
+// =============================================================================
+
+export const AUDIT_ACTIONS = [
+  "ISSUE_TOKEN",
+  "REVOKE_TOKEN",
+  "ARCHIVE_NOTE",
+  "ACTION_CORRECTION",
+] as const;
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+
+export const auditLog = pgTable("audit_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  at: timestamp("at").notNull().defaultNow(),
+  actorGuardianId: varchar("actor_guardian_id").references(
+    () => guardians.id,
+    { onDelete: "set null" },
+  ),
+  action: text("action", { enum: AUDIT_ACTIONS }).notNull(),
+  targetId: varchar("target_id"),
+  metadata: jsonb("metadata")
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
+});
+
+// =============================================================================
 // Zod insert schemas
 // =============================================================================
 //
@@ -192,6 +377,10 @@ export const insertLocationSchema = createInsertSchema(locations)
     reliabilityScore: true,
     lastReportAt: true,
     archivedAt: true,
+    addedByDeviceKey: true,
+    // hoursStructured is parsed server-side from `hours` (Phase 6 lands the
+    // parser); clients never send it directly.
+    hoursStructured: true,
   })
   .extend({
     name: z.string().min(1).max(200),
@@ -206,21 +395,155 @@ export const insertLocationSchema = createInsertSchema(locations)
     verificationLevel: z.enum(VERIFICATION_LEVELS).default("unverified"),
   });
 
+// Barrier vocabulary matrix per report type. See spec.md §6.4 and contracts.md
+// "Reports" section. Barriers not listed for a given type are rejected.
+export const BARRIERS_FOR_REPORT_TYPE: Record<ReportType, ReadonlySet<BarrierValue>> = {
+  success: new Set<BarrierValue>(), // must be empty
+  success_but: new Set<BarrierValue>(BARRIER_VALUES), // any
+  out_of_stock: new Set<BarrierValue>([
+    "wrong_form_only",
+    "staff_unsure",
+    "staff_rude",
+    "limited_hours",
+  ]),
+  denied: new Set<BarrierValue>([
+    "id_required",
+    "medicare_required",
+    "prescription_required",
+    "staff_unsure",
+    "staff_rude",
+    "many_questions",
+    "age_restriction",
+  ]),
+};
+
 export const insertReportSchema = createInsertSchema(reports)
   .omit({
     id: true,
     submittedAt: true,
     weight: true,
+    // deviceKey comes from the X-Device-Key header server-side; clients never
+    // submit it in the body.
+    deviceKey: true,
   })
   .extend({
     reportType: z.enum(REPORT_TYPES),
-    barriers: z.array(z.enum(BARRIER_VALUES)).max(BARRIER_VALUES.length),
+    barriers: z.array(z.enum(BARRIER_VALUES)).max(BARRIER_VALUES.length).default([]),
     notes: z.string().max(500).nullish(),
     costAmount: z
       .union([z.string(), z.number()])
       .transform((v) => (typeof v === "number" ? v.toFixed(2) : v))
       .pipe(z.string().regex(/^\d+(\.\d{1,2})?$/))
       .nullish(),
+    visitDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  })
+  .superRefine((report, ctx) => {
+    const allowed = BARRIERS_FOR_REPORT_TYPE[report.reportType];
+
+    // success must have no barriers; success_but and denied must have ≥1.
+    if (report.reportType === "success" && report.barriers.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["barriers"],
+        message: "barriers must be empty when reportType is 'success'",
+      });
+    }
+    if (
+      (report.reportType === "success_but" || report.reportType === "denied") &&
+      report.barriers.length === 0
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["barriers"],
+        message: `barriers must contain at least one item when reportType is '${report.reportType}'`,
+      });
+    }
+
+    // Every selected barrier must be valid for this report type.
+    for (const b of report.barriers) {
+      if (!allowed.has(b)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["barriers"],
+          message: `barrier '${b}' is not valid for reportType '${report.reportType}'`,
+        });
+      }
+    }
+
+    // costAmount only on success_but, only if cost_involved is selected.
+    if (report.costAmount != null) {
+      if (report.reportType !== "success_but") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["costAmount"],
+          message: "costAmount is only permitted on success_but reports",
+        });
+      }
+      if (!report.barriers.includes("cost_involved")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["costAmount"],
+          message: "costAmount requires 'cost_involved' in barriers",
+        });
+      }
+    }
+
+    // visitDate window: ≤ today_utc + 1 (timezone slack), ≥ today_utc - 90.
+    const todayUtc = new Date();
+    todayUtc.setUTCHours(0, 0, 0, 0);
+    const visit = new Date(report.visitDate + "T00:00:00Z");
+    const maxFutureMs = 24 * 60 * 60 * 1000;
+    const minPastMs = 90 * 24 * 60 * 60 * 1000;
+    if (Number.isNaN(visit.getTime())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["visitDate"],
+        message: "visitDate is not a valid date",
+      });
+    } else if (visit.getTime() > todayUtc.getTime() + maxFutureMs) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["visitDate"],
+        message: "visitDate cannot be more than 1 day in the future",
+      });
+    } else if (visit.getTime() < todayUtc.getTime() - minPastMs) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["visitDate"],
+        message: "visitDate cannot be more than 90 days ago",
+      });
+    }
+  });
+
+// =============================================================================
+// Other insert schemas — minimal Phase-2 subset; Phase 4/7 add the rest.
+// =============================================================================
+
+export const insertSavedPlaceSchema = createInsertSchema(savedPlaces)
+  .omit({ id: true, createdAt: true, deviceKey: true })
+  .extend({
+    personalLabel: z.string().max(40).nullish(),
+    personalNote: z.string().max(500).nullish(),
+  });
+
+export const insertWatchSchema = createInsertSchema(watches)
+  .omit({ id: true, createdAt: true, deviceKey: true })
+  .extend({
+    alertOnStatusChange: z.boolean().default(true),
+    alertOnGuardianNote: z.boolean().default(true),
+  });
+
+export const insertCorrectionSchema = createInsertSchema(corrections)
+  .omit({
+    id: true,
+    createdAt: true,
+    deviceKey: true,
+    status: true,
+    reviewedAt: true,
+    reviewedByGuardianId: true,
+  })
+  .extend({
+    text: z.string().min(1).max(500),
   });
 
 // =============================================================================
@@ -234,6 +557,25 @@ export type Report = typeof reports.$inferSelect;
 export type InsertReport = z.infer<typeof insertReportSchema>;
 
 export type DeviceReport = typeof deviceReports.$inferSelect;
+
+export type SavedPlace = typeof savedPlaces.$inferSelect;
+export type InsertSavedPlace = z.infer<typeof insertSavedPlaceSchema>;
+
+export type Watch = typeof watches.$inferSelect;
+export type InsertWatch = z.infer<typeof insertWatchSchema>;
+
+export type Guardian = typeof guardians.$inferSelect;
+export type GuardianNote = typeof guardianNotes.$inferSelect;
+export type GuardianToken = typeof guardianTokens.$inferSelect;
+export type GuardianSession = typeof guardianSessions.$inferSelect;
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type DailyMetric = typeof dailyMetrics.$inferSelect;
+
+export type Correction = typeof corrections.$inferSelect;
+export type InsertCorrection = z.infer<typeof insertCorrectionSchema>;
+
+export type AuditLogEntry = typeof auditLog.$inferSelect;
 
 // Consensus shape served by the API. Computed from `reports` via consensus.ts.
 export interface BarrierFact {
