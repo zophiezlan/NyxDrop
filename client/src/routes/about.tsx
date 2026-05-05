@@ -130,6 +130,22 @@ export default function AboutRoute() {
           &ldquo;Cost reported in recent visits&rdquo;) so a person can decide
           whether to walk in before they walk in.
         </p>
+        <p className="mt-3">
+          The site list is seeded from the{" "}
+          <a
+            href="https://www.health.gov.au/our-work/take-home-naloxone-program"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-700 underline"
+          >
+            Australian Government Take Home Naloxone Program participating-site
+            locator
+          </a>
+          . That registry tells us which operators have signed up to take part —
+          it does <strong>not</strong> tell us who actually has stock today, or
+          how visitors are treated when they ask. That second layer is what this
+          app exists to provide.
+        </p>
       </Section>
 
       <Section id="privacy" title="Privacy">

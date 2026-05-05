@@ -117,6 +117,20 @@ export const locations = pgTable("locations", {
 
   partnerOrgId: varchar("partner_org_id"),
 
+  /**
+   * If this row was imported from the Australian Government Take Home
+   * Naloxone Program participating-site locator, the OBJECTID from that
+   * registry. Used as the upsert key by `server/scripts/import-thn.ts` so
+   * re-running the importer is idempotent.
+   *
+   * Constitution V + D-013: registry membership is a non-trust signal,
+   * separate from `verificationLevel`. Being on the THN registry means the
+   * org has signed up to participate; it does NOT mean stock is available
+   * today. The detail sheet surfaces this as a neutral fact, never as a
+   * verification badge.
+   */
+  thnObjectId: integer("thn_object_id").unique(),
+
   addedByDeviceKey: text("added_by_device_key"),
   addedAt: timestamp("added_at").notNull().defaultNow(),
 
@@ -384,6 +398,8 @@ export const insertLocationSchema = createInsertSchema(locations)
     // hoursStructured is parsed server-side from `hours` (Phase 6 lands the
     // parser); clients never send it directly.
     hoursStructured: true,
+    // thnObjectId is set only by the THN importer, never by user submissions.
+    thnObjectId: true,
   })
   .extend({
     name: z.string().min(1).max(200),

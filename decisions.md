@@ -208,6 +208,54 @@ heading arrow, etc.).
 
 ---
 
+## D-013 — THN registry membership is NOT a trust signal
+
+**Status:** decided
+**Date:** 2026-05-05
+
+The Australian Government Take Home Naloxone Program publishes a
+participating-site registry via ArcGIS (see `server/scripts/import-thn.ts`).
+Importing it gave us a tempting shortcut: tag every imported row with
+`verificationLevel: "official"` and let pin colour reflect "gov-confirmed."
+
+That would have collapsed two orthogonal signals into one number, in
+violation of constitution V (*"Trust is layered, never averaged on the
+surface"*). Worse, it would have lied to the user. The point of the app —
+the soft-denial problem the entire build is shaped around — is that a place
+*on the registry* may still turn you away, ask for ID, charge you, or be out
+of stock. Painting registry-membership as a verification badge would erase
+the very phenomenon the constitution requires us to surface.
+
+**The rule, locked:**
+
+1. Sites imported from the THN registry land at
+   `verificationLevel: "unverified"`. Re-imports do **not** downgrade rows
+   the community (or a guardian) has since promoted.
+2. Registry membership is recorded as a separate column,
+   `locations.thn_object_id` — a presence flag, not a trust score. It never
+   enters consensus math, pin colour, pin size, reliability stars, or the
+   verification badge.
+3. The detail sheet renders a small neutral panel ("Listed on the THN
+   Program participating-site registry — whether stock is available today
+   is a separate question") between guardian notes and the algorithmic
+   facts. It is information, not endorsement.
+4. The /about page attributes the seed list to the THN locator and
+   explicitly says the registry "does not tell us who actually has stock
+   today, or how visitors are treated when they ask. That second layer is
+   what this app exists to provide."
+5. Importer is idempotent (UPSERT on `thn_object_id`) and runs by hand or
+   on a future cron — `npm run db:import-thn`. It should never run as part
+   of an automated `db:push` or migration; the data is operational, not
+   structural.
+
+This decision is load-bearing. If a future feature looks like it would let
+"on the THN list" surface as a quality signal anywhere on the surface
+(pin, badge, ranking, search boost), revisit this entry first. The
+constitutional read here is sharp and an LLM may not soften it without
+amendment.
+
+---
+
 ## D-012 — Lighthouse `target-size` and `image-size-responsive` failures are Leaflet noise
 
 **Status:** decided (won't-fix)
