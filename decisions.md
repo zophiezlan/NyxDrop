@@ -208,6 +208,34 @@ heading arrow, etc.).
 
 ---
 
+## D-012 — Lighthouse `target-size` and `image-size-responsive` failures are Leaflet noise
+
+**Status:** decided (won't-fix)
+**Date:** 2026-05-05
+
+The post-Phase-8 Lighthouse run flags two audits we do not intend to chase:
+
+- **`target-size` (a11y -4)** — fires on every visible `.nl-pin-icon` Leaflet
+  marker. Pin diameter encodes report volume per `algorithms.md` §2 (small =
+  low confidence, large = high confidence). Forcing all pins to ≥ 44px
+  erases that semantic and visually clutters the map. WCAG SC 2.5.5 explicitly
+  exempts "essential" target sizes; pin size is essential here. Bottom action
+  bar buttons, Toast dismiss, and the search clear/voice buttons are all
+  ≥ 44px and do not appear in the violations list.
+
+- **`image-size-responsive` (best-practices -4 mobile)** — fires on OSM tiles
+  served at 256×256 and rendered at 256×256. The displayed size matches the
+  intrinsic size exactly; the audit appears to misclassify map tiles
+  (rendered into Leaflet panes via `<img>` without a srcset, deliberately)
+  as content images. There is no "responsive" variant to serve.
+
+Both leave us at 96 / 96 a11y and 92–96 best-practices, well above the Phase 8
+demo gates (≥ 95 a11y; no specific best-practices target). Revisit only if
+Lighthouse adds a way to except map markers / tiles, or if a real touch-
+target issue appears on a non-Leaflet element.
+
+---
+
 ## D-011 — Service worker caches HTTP responses in Cache API, not IndexedDB
 
 **Status:** decided

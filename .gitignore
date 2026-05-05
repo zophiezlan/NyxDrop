@@ -27,3 +27,4 @@ npm-debug.log*
 # local
 .drizzle/
 .claude/settings.local.json
+.archive/

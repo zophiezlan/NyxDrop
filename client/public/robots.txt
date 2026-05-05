@@ -1,0 +1,10 @@
+# NaloxoneLocate — public crawl policy.
+#
+# The whole site is publicly indexable except for the guardian admin
+# surface and the API. The guardian routes are token-gated anyway, but we
+# don't want them in search results either.
+
+User-agent: *
+Allow: /
+Disallow: /guardian
+Disallow: /api/
