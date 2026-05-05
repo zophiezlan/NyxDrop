@@ -268,34 +268,55 @@ function SheetBodyNow({ location }: { location: LocationWithConsensus }) {
 }
 
 /**
- * Neutral fact line for locations sourced from the AU government Take Home
- * Naloxone (THN) Program participating-site registry. Constitution V +
- * D-013: registry membership is NOT a trust signal. Being on the registry
- * means the operator has signed up to participate; it does NOT mean stock
- * is available today. Rendered as a small grey panel below guardian notes
- * and above the algorithmic data so a reader knows it's context, not a
+ * Neutral fact panel for locations that appear on a government registry
+ * (THN nationwide, NSW NSP, possibly more sources later). Constitution V +
+ * D-013: registry membership is NOT a trust signal. Being listed means the
+ * operator has signed up to participate; it does NOT mean stock is
+ * available today. Rendered as a small grey panel below guardian notes and
+ * above the algorithmic data so a reader knows it's context, not a
  * verification badge.
  */
 function RegistryFact({ location }: { location: LocationWithConsensus }) {
-  if (location.thnObjectId == null) return null;
+  const onThn = location.thnObjectId != null;
+  const onNswNsp = location.nswNspListing != null;
+  if (!onThn && !onNswNsp) return null;
+  const closingNote =
+    "Whether stock is available today is a separate question — see the visitor reports below.";
   return (
     <section
-      className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-700"
+      className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-700 space-y-2"
       aria-label="Registry information"
     >
-      <p>
-        Listed on the{" "}
-        <a
-          href="https://www.health.gov.au/our-work/take-home-naloxone-program"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-700 underline focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-700"
-        >
-          Take Home Naloxone Program
-        </a>{" "}
-        participating-site registry. Whether stock is available today is a
-        separate question — see the visitor reports below.
-      </p>
+      {onThn ? (
+        <p>
+          Listed on the{" "}
+          <a
+            href="https://www.health.gov.au/our-work/take-home-naloxone-program"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-700 underline focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-700"
+          >
+            Take Home Naloxone Program
+          </a>{" "}
+          participating-site registry.
+        </p>
+      ) : null}
+      {onNswNsp ? (
+        <p>
+          NSW Health lists this as a{" "}
+          <span className="font-medium">{location.nswNspListing}</span>{" "}
+          <a
+            href="https://www.health.nsw.gov.au/aod/Pages/nsp-finder.aspx"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-700 underline focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-700"
+          >
+            Needle and Syringe Program outlet
+          </a>
+          .
+        </p>
+      ) : null}
+      <p className="text-neutral-500">{closingNote}</p>
     </section>
   );
 }

@@ -208,15 +208,21 @@ heading arrow, etc.).
 
 ---
 
-## D-013 — THN registry membership is NOT a trust signal
+## D-013 — Government registry membership is NOT a trust signal
 
 **Status:** decided
-**Date:** 2026-05-05
+**Date:** 2026-05-05 (extended for NSW NSP source 2026-05-05)
 
 The Australian Government Take Home Naloxone Program publishes a
 participating-site registry via ArcGIS (see `server/scripts/import-thn.ts`).
-Importing it gave us a tempting shortcut: tag every imported row with
-`verificationLevel: "official"` and let pin colour reflect "gov-confirmed."
+NSW Health publishes a parallel directory of NSP outlets (primary,
+secondary, and pharmacies) as CSVs (see
+`server/scripts/import-nsw-nsp.ts`). Both will likely have peers as more
+states publish similar data.
+
+Importing any of them gave us a tempting shortcut: tag every imported row
+with `verificationLevel: "official"` and let pin colour reflect
+"gov-confirmed."
 
 That would have collapsed two orthogonal signals into one number, in
 violation of constitution V (*"Trust is layered, never averaged on the
@@ -228,28 +234,36 @@ the very phenomenon the constitution requires us to surface.
 
 **The rule, locked:**
 
-1. Sites imported from the THN registry land at
+1. Sites imported from any government registry land at
    `verificationLevel: "unverified"`. Re-imports do **not** downgrade rows
    the community (or a guardian) has since promoted.
-2. Registry membership is recorded as a separate column,
-   `locations.thn_object_id` — a presence flag, not a trust score. It never
-   enters consensus math, pin colour, pin size, reliability stars, or the
-   verification badge.
-3. The detail sheet renders a small neutral panel ("Listed on the THN
-   Program participating-site registry — whether stock is available today
-   is a separate question") between guardian notes and the algorithmic
-   facts. It is information, not endorsement.
-4. The /about page attributes the seed list to the THN locator and
-   explicitly says the registry "does not tell us who actually has stock
-   today, or how visitors are treated when they ask. That second layer is
-   what this app exists to provide."
-5. Importer is idempotent (UPSERT on `thn_object_id`) and runs by hand or
-   on a future cron — `npm run db:import-thn`. It should never run as part
-   of an automated `db:push` or migration; the data is operational, not
-   structural.
+2. Registry membership is recorded as separate, narrow columns:
+   - `locations.thn_object_id` — OBJECTID from the THN locator
+   - `locations.nsw_nsp_listing` — `primary` / `secondary` / `pharmacy`
+     (the NSW sub-list this row is on)
+   These are presence flags, not trust scores. They never enter consensus
+   math, pin colour, pin size, reliability stars, or the verification
+   badge.
+3. The detail sheet renders a single neutral panel between guardian notes
+   and the algorithmic facts that lists every registry the location appears
+   on, plus the closing line *"Whether stock is available today is a
+   separate question — see the visitor reports below."* Information, not
+   endorsement.
+4. The /about page attributes the seed list to both sources and explicitly
+   says the registries "do not tell us who actually has stock today, or
+   how visitors are treated when they ask. That second layer is what this
+   app exists to provide."
+5. Importers are idempotent and run by hand (or on a future cron):
+   `npm run db:import-thn` then `npm run db:import-nsw-nsp`. Order matters
+   because the NSW importer geo-dedups against existing rows; running it
+   second lets it enrich THN rows with phone/hours where the NSW data has
+   them. They should never run as part of `db:push` or a migration —
+   data is operational, not structural.
+6. The NSW importer never overwrites community-edited `phone` or `hours`;
+   it fills only when the existing field is null.
 
 This decision is load-bearing. If a future feature looks like it would let
-"on the THN list" surface as a quality signal anywhere on the surface
+"on a government list" surface as a quality signal anywhere on the surface
 (pin, badge, ranking, search boost), revisit this entry first. The
 constitutional read here is sharp and an LLM may not soften it without
 amendment.

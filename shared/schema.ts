@@ -42,6 +42,13 @@ export const VERIFICATION_LEVELS = [
 ] as const;
 export type VerificationLevel = (typeof VERIFICATION_LEVELS)[number];
 
+// NSW Health publishes its Needle and Syringe Program outlets in three
+// sub-lists. We retain the sub-list a location belongs to as a neutral
+// presence flag — same constitutional rule as `thnObjectId` (D-013):
+// listing membership is NOT a trust signal.
+export const NSW_NSP_LISTINGS = ["primary", "secondary", "pharmacy"] as const;
+export type NswNspListing = (typeof NSW_NSP_LISTINGS)[number];
+
 export const LOCATION_TAGS = [
   "wheelchair_accessible",
   "no_id_required",
@@ -130,6 +137,19 @@ export const locations = pgTable("locations", {
    * verification badge.
    */
   thnObjectId: integer("thn_object_id").unique(),
+
+  /**
+   * If this row appears in NSW Health's Needle and Syringe Program outlet
+   * lists, which sub-list. `null` means the row is not on a NSW NSP list
+   * (e.g. it's outside NSW, or NSW Health hasn't listed it). Set by the
+   * NSW NSP importer (`server/scripts/import-nsw-nsp.ts`); preserved
+   * across re-runs.
+   *
+   * Same constitutional rule as `thnObjectId` (D-013): being a NSW NSP
+   * outlet says NSW Health knows the operator participates; it does NOT
+   * mean stock is available today.
+   */
+  nswNspListing: text("nsw_nsp_listing", { enum: NSW_NSP_LISTINGS }),
 
   addedByDeviceKey: text("added_by_device_key"),
   addedAt: timestamp("added_at").notNull().defaultNow(),
@@ -400,6 +420,8 @@ export const insertLocationSchema = createInsertSchema(locations)
     hoursStructured: true,
     // thnObjectId is set only by the THN importer, never by user submissions.
     thnObjectId: true,
+    // nswNspListing is set only by the NSW NSP importer, never by clients.
+    nswNspListing: true,
   })
   .extend({
     name: z.string().min(1).max(200),

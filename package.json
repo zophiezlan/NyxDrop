@@ -15,6 +15,7 @@
     "db:push": "drizzle-kit push",
     "db:seed": "tsx server/scripts/seed.ts",
     "db:import-thn": "tsx server/scripts/import-thn.ts",
+    "db:import-nsw-nsp": "tsx server/scripts/import-nsw-nsp.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

@@ -415,6 +415,7 @@ describe("filterByAbsenceOfBarriers", () => {
       verificationLevel: "unverified",
       partnerOrgId: null,
       thnObjectId: null,
+      nswNspListing: null,
       addedByDeviceKey: null,
       addedAt: NOW,
       totalReportsCount: 0,

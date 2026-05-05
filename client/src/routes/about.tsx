@@ -131,7 +131,7 @@ export default function AboutRoute() {
           whether to walk in before they walk in.
         </p>
         <p className="mt-3">
-          The site list is seeded from the{" "}
+          The site list is seeded from two government sources: the{" "}
           <a
             href="https://www.health.gov.au/our-work/take-home-naloxone-program"
             target="_blank"
@@ -141,8 +141,18 @@ export default function AboutRoute() {
             Australian Government Take Home Naloxone Program participating-site
             locator
           </a>
-          . That registry tells us which operators have signed up to take part —
-          it does <strong>not</strong> tell us who actually has stock today, or
+          {" "}(nationwide), enriched in NSW with the{" "}
+          <a
+            href="https://www.health.nsw.gov.au/aod/Pages/nsp-finder.aspx"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-700 underline"
+          >
+            NSW Health Needle and Syringe Program outlet directory
+          </a>
+          {" "}(primary services, secondary outlets, and pharmacies). Those
+          registries tell us which operators have signed up to take part —
+          they do <strong>not</strong> tell us who actually has stock today, or
           how visitors are treated when they ask. That second layer is what this
           app exists to provide.
         </p>
