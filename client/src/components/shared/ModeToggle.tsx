@@ -1,4 +1,5 @@
 import type { AppMode } from "@/hooks/use-mode";
+import { useT } from "@/lib/i18n";
 
 interface ModeToggleProps {
   mode: AppMode;
@@ -13,6 +14,7 @@ interface ModeToggleProps {
  * mirrors this toggle and is wired in the route.
  */
 export function ModeToggle({ mode, onChange, hidden }: ModeToggleProps) {
+  const t = useT();
   if (hidden) return null;
   return (
     <div className="fixed top-3 left-3 z-30 inline-flex rounded-full bg-white shadow-lg ring-1 ring-neutral-200 p-0.5">
@@ -26,7 +28,7 @@ export function ModeToggle({ mode, onChange, hidden }: ModeToggleProps) {
             : "text-neutral-700 hover:bg-neutral-50"
         }`}
       >
-        Plan
+        {t("mode.plan")}
       </button>
       <button
         type="button"
@@ -38,7 +40,7 @@ export function ModeToggle({ mode, onChange, hidden }: ModeToggleProps) {
             : "text-red-700 hover:bg-red-50"
         }`}
       >
-        Now
+        {t("mode.now")}
       </button>
     </div>
   );

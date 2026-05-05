@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n";
 
 const STORAGE_KEY = "nl.onboarded";
 
 export function OnboardingOverlay() {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -21,18 +23,14 @@ export function OnboardingOverlay() {
     >
       <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl p-6 text-neutral-900">
         <h1 id="onboarding-title" className="text-xl font-semibold">
-          NaloxoneLocate
+          {t("app.title")}
         </h1>
         <p className="mt-3 text-sm text-neutral-700">
-          A community map of naloxone access in Australia.
+          {t("app.tagline")}
           <br />
-          Anonymous. No accounts. Built by peers.
+          {t("app.subtitle")}
         </p>
-        <p className="mt-4 text-sm text-red-700">
-          If someone is overdosing right now, tap{" "}
-          <span className="font-semibold">Now</span> mode or call{" "}
-          <span className="font-semibold">000</span>.
-        </p>
+        <p className="mt-4 text-sm text-red-700">{t("onboarding.emergency")}</p>
         <button
           type="button"
           className="mt-6 w-full rounded-xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
@@ -41,7 +39,7 @@ export function OnboardingOverlay() {
             setOpen(false);
           }}
         >
-          Got it
+          {t("onboarding.continue")}
         </button>
       </div>
     </div>

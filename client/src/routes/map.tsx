@@ -25,6 +25,7 @@ import { filterByAbsenceOfBarriers } from "@shared/consensus";
 import type { LocationWithConsensus } from "@shared/schema";
 import { api, ApiError } from "@/lib/api";
 import { forgetDevice } from "@/lib/device-key";
+import { useT } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 
 const InteractiveMap = lazy(() =>
@@ -47,7 +48,10 @@ interface ToastState {
   tone?: "info" | "warn";
 }
 
+type Bbox = { swLat: number; swLon: number; neLat: number; neLon: number };
+
 export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProps) {
+  const t = useT();
   const [, navigate] = useWouterLocation();
   const geo = useGeolocation();
   const { mode, setMode } = useMode();
@@ -57,6 +61,7 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
+  const [searchAreaBbox, setSearchAreaBbox] = useState<Bbox | null>(null);
   const { preferences, setPreferences } = useAppPreferences();
   const qc = useQueryClient();
 
@@ -92,6 +97,7 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
   const locationsQuery = useLocations({
     lat: geo.position.lat,
     lon: geo.position.lon,
+    bbox: searchAreaBbox ?? undefined,
     type: filters.type.length > 0 ? filters.type : undefined,
     verification: filters.verification.length > 0 ? filters.verification : undefined,
     recent: filters.recent || undefined,
@@ -184,15 +190,18 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
     setToast({ message: ack, tone: "info" });
   }, []);
 
-  const handleQueued = useCallback((reason: "offline" | "network_error") => {
-    setToast({
-      message:
-        reason === "offline"
-          ? "Report saved offline. Will sync when you're back online."
-          : "Could not reach the server. Saved offline; will sync soon.",
-      tone: "warn",
-    });
-  }, []);
+  const handleQueued = useCallback(
+    (reason: "offline" | "network_error") => {
+      setToast({
+        message:
+          reason === "offline"
+            ? t("report.queued_offline")
+            : t("report.queued_network"),
+        tone: "warn",
+      });
+    },
+    [t],
+  );
 
   return (
     <div className={`relative ${mode === "now" ? "bg-red-50" : "bg-neutral-50"}`}>
@@ -204,10 +213,11 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
           selectedId={selectedId}
           onSelect={handleSelect}
           autoFitMode={mode === "now" ? "nearest-3" : "default"}
+          onSearchArea={mode === "plan" ? setSearchAreaBbox : undefined}
         />
       </Suspense>
 
-      {locationsQuery.isError ? <ApiBanner /> : null}
+      {locationsQuery.isError ? <ApiBanner message={t("errors.api_unreachable")} /> : null}
 
       {openSheet === "my-places" ? (
         <MyPlacesSheet
@@ -328,7 +338,7 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
               if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
                 // Don't proceed on a 4xx — surface to user via toast and bail.
                 setToast({
-                  message: "Could not contact the server. Try again.",
+                  message: t("errors.forget_device_failed"),
                   tone: "warn",
                 });
                 return;
@@ -448,13 +458,13 @@ function TopRightButtons({
   );
 }
 
-function ApiBanner() {
+function ApiBanner({ message }: { message: string }) {
   return (
     <div
       role="status"
       className="fixed inset-x-0 top-0 z-40 bg-amber-100 border-b border-amber-200 px-4 py-2 text-center text-xs text-amber-900"
     >
-      Could not reach the server. The map may be empty until the connection is back.
+      {message}
     </div>
   );
 }

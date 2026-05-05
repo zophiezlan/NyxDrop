@@ -10,6 +10,7 @@
   "search.this_area": "Search this area",
   "search.voice_label": "Voice search",
   "search.voice_listening": "Listening…",
+  "search.no_matches": "No matches.",
 
   "mode.plan": "Plan",
   "mode.now": "Now",
@@ -30,6 +31,8 @@
 
   "actions.i_went_here": "I went here",
   "actions.add_a_place": "Add a place",
+  "actions.filters": "Filters",
+  "actions.filters_active": "Filters ({count} active)",
   "actions.report_visit": "Report a visit",
   "actions.directions": "Directions",
   "actions.call_this_place": "Call this place",
@@ -103,5 +106,8 @@
   "about.metric_locations": "locations on the map",
   "about.metric_reports": "reports in the last 30 days",
   "about.metric_success_rate": "got naloxone in the last 30 days",
-  "about.privacy_paragraph": "We do not have accounts. Your device gets a random key stored only in your browser. Reports are anonymous. You can erase the key any time."
+  "about.privacy_paragraph": "We do not have accounts. Your device gets a random key stored only in your browser. Reports are anonymous. You can erase the key any time.",
+
+  "errors.api_unreachable": "Could not reach the server. The map may be empty until the connection is back.",
+  "errors.forget_device_failed": "Could not contact the server. Try again."
 }

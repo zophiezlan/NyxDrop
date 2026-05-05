@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useMap, useMapEvents } from "react-leaflet";
 
 interface SearchThisAreaButtonProps {
@@ -16,17 +16,17 @@ export function SearchThisAreaButton({ onTrigger }: SearchThisAreaButtonProps) {
   const [show, setShow] = useState(false);
   const initialCentreRef = useRef<{ lat: number; lng: number } | null>(null);
 
-  useEffect(() => {
-    const c = map.getCenter();
-    initialCentreRef.current = { lat: c.lat, lng: c.lng };
-  }, [map]);
-
   useMapEvents({
     moveend: () => {
       const c = map.getCenter();
+      // The first moveend after mount is the FitToBounds initial fit — not a
+      // user pan. Capture that settled position as the baseline; subsequent
+      // moveends are compared against it to decide whether to show.
+      if (!initialCentreRef.current) {
+        initialCentreRef.current = { lat: c.lat, lng: c.lng };
+        return;
+      }
       const start = initialCentreRef.current;
-      if (!start) return;
-      // Show after the user has panned ~more than half a viewport width.
       const dLat = Math.abs(c.lat - start.lat);
       const dLng = Math.abs(c.lng - start.lng);
       setShow(dLat > 0.01 || dLng > 0.01);

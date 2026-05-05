@@ -3,6 +3,7 @@ import {
   isLocaleReady,
   LOCALES,
   LOCALE_LABELS,
+  useT,
   type Locale,
 } from "@/lib/i18n";
 import {
@@ -24,6 +25,7 @@ export function SettingsSheet({
   onClose,
   onForgetDevice,
 }: SettingsSheetProps) {
+  const t = useT();
   const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,20 +62,20 @@ export function SettingsSheet({
       <div className="px-5 pt-3 pb-8 text-neutral-900 space-y-6">
         <header className="flex items-start justify-between gap-3">
           <h2 id="settings-title" className="text-lg font-semibold">
-            Settings
+            {t("settings.title")}
           </h2>
           <button
             type="button"
             className="rounded-md text-sm text-neutral-500 hover:text-neutral-900 focus:outline-none focus:underline"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("actions.close")}
           >
-            Close
+            {t("actions.close")}
           </button>
         </header>
 
-        <Section title="Display">
-          <Field label="Language">
+        <Section title={t("settings.display")}>
+          <Field label={t("settings.language")}>
             <select
               value={preferences.locale}
               onChange={(e) => update("locale", e.target.value as Locale)}
@@ -94,27 +96,27 @@ export function SettingsSheet({
             ) : null}
           </Field>
 
-          <Field label="Theme">
+          <Field label={t("settings.theme")}>
             <div className="grid grid-cols-3 gap-2">
               {(
                 [
-                  ["light", "Light"],
-                  ["dark", "Dark"],
-                  ["system", "System"],
+                  ["light", "settings.theme_light"],
+                  ["dark", "settings.theme_dark"],
+                  ["system", "settings.theme_system"],
                 ] as const
-              ).map(([v, label]) => (
+              ).map(([v, key]) => (
                 <SegBtn
                   key={v}
                   active={preferences.theme === v}
                   onClick={() => update("theme", v as Theme)}
                 >
-                  {label}
+                  {t(key)}
                 </SegBtn>
               ))}
             </div>
           </Field>
 
-          <Field label={`Font size — ${preferences.fontSize}px`}>
+          <Field label={`${t("settings.font_size")} — ${preferences.fontSize}px`}>
             <input
               type="range"
               min={12}
@@ -135,12 +137,12 @@ export function SettingsSheet({
           </Field>
 
           <ToggleRow
-            label="High contrast"
+            label={t("settings.high_contrast")}
             checked={preferences.highContrast}
             onChange={(b) => update("highContrast", b)}
           />
           <ToggleRow
-            label="Reduced motion"
+            label={t("settings.reduced_motion")}
             description="Disables all animations and transitions"
             checked={preferences.reducedMotion}
             onChange={(b) => update("reducedMotion", b)}
@@ -148,9 +150,9 @@ export function SettingsSheet({
         </Section>
 
         {voiceSupported ? (
-          <Section title="Input">
+          <Section title={t("settings.input")}>
             <ToggleRow
-              label="Voice search"
+              label={t("settings.voice_search")}
               checked={preferences.voiceSearchEnabled}
               onChange={(b) => update("voiceSearchEnabled", b)}
             />
@@ -162,14 +164,14 @@ export function SettingsSheet({
             href="/about"
             className="block rounded-lg px-1 py-1 text-sm text-blue-700 hover:underline focus:outline-none focus:underline"
           >
-            About this app →
+            {t("settings.about_link")} →
           </a>
           <button
             type="button"
             onClick={onForgetDevice}
             className="mt-2 block w-full rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
           >
-            Forget this device
+            {t("settings.forget_link")}
           </button>
         </Section>
       </div>

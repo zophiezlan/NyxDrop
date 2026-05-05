@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchLocations } from "@/hooks/use-locations";
 import { useVoiceSearch, isVoiceSearchSupported } from "@/hooks/use-voice-search";
 import { formatDistanceKm } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import type { LocationWithConsensus } from "@shared/schema";
 
 interface SearchBarProps {
@@ -16,6 +17,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ geo, voiceEnabled = true, locale, onPick }: SearchBarProps) {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [open, setOpen] = useState(false);
@@ -49,7 +51,7 @@ export function SearchBar({ geo, voiceEnabled = true, locale, onPick }: SearchBa
             ref={inputRef}
             type="search"
             value={query}
-            placeholder="Search by name or address"
+            placeholder={t("search.placeholder")}
             onChange={(e) => {
               setQuery(e.target.value);
               setOpen(true);
@@ -84,7 +86,7 @@ export function SearchBar({ geo, voiceEnabled = true, locale, onPick }: SearchBa
           {showVoiceMic ? (
             <button
               type="button"
-              aria-label={voice.isListening ? "Listening — tap to stop" : "Voice search"}
+              aria-label={voice.isListening ? t("search.voice_listening") : t("search.voice_label")}
               aria-pressed={voice.isListening}
               onClick={() => (voice.isListening ? voice.stop() : voice.start())}
               className={`rounded-full p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-neutral-900 ${
@@ -130,7 +132,7 @@ export function SearchBar({ geo, voiceEnabled = true, locale, onPick }: SearchBa
                 ))}
               </ul>
             ) : (
-              <p className="px-3 py-3 text-sm text-neutral-500">No matches.</p>
+              <p className="px-3 py-3 text-sm text-neutral-500">{t("search.no_matches")}</p>
             )}
             {voice.error ? (
               <p role="alert" className="px-3 py-2 text-xs text-red-700">

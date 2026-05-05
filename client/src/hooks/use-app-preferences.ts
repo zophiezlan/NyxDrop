@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { ensureLocale } from "@/lib/i18n";
 
 // Persist accessibility/display preferences in localStorage and apply them to
 // <html> via classes/CSS variables. The Settings sheet drives this hook;
@@ -66,6 +67,10 @@ function applyToDocument(prefs: AppPreferences): void {
   // Locale + RTL
   html.lang = prefs.locale;
   html.dir = prefs.locale === "ar" ? "rtl" : "ltr";
+
+  // Load the locale's translations and activate it. The i18n module caches
+  // tables, so subsequent calls with the same locale return immediately.
+  void ensureLocale(prefs.locale);
 }
 
 export function useAppPreferences(): {

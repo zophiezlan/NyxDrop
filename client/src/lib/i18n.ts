@@ -6,6 +6,8 @@
 // fall back to en until reviewed. The Settings picker tags non-English
 // locales as <beta> so the user knows.
 
+import { useEffect, useState } from "react";
+
 export type Locale = "en" | "zh" | "ar" | "es" | "vi" | "ko";
 
 export const LOCALES: ReadonlyArray<Locale> = ["en", "zh", "ar", "es", "vi", "ko"];
@@ -63,4 +65,27 @@ export function t(key: string, fallbackEn?: string): string {
   const en = tables.en?.[key];
   if (en) return en;
   return fallbackEn ?? key;
+}
+
+/**
+ * App-level driver. Loads the en fallback table and the requested locale,
+ * then activates it. Idempotent — repeat calls with the same locale are no-ops
+ * after the first load.
+ */
+export function ensureLocale(locale: Locale): Promise<void> {
+  return (async () => {
+    await loadLocale("en");
+    if (locale !== "en") await loadLocale(locale);
+    setActiveLocale(locale);
+  })();
+}
+
+/**
+ * Component hook: subscribes the calling component to active-locale changes
+ * so it re-renders when the user picks a new language. Returns the bound t().
+ */
+export function useT(): typeof t {
+  const [, force] = useState(0);
+  useEffect(() => subscribe(() => force((n) => n + 1)), []);
+  return t;
 }

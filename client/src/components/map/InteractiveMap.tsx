@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import type { Map as LeafletMap } from "leaflet";
 import { createPinIcon, createUserLocationIcon } from "./pin-icon.js";
+import { SearchThisAreaButton } from "@/components/search/SearchThisAreaButton";
 import type { LocationWithConsensus } from "@shared/schema";
 
 type AutoFitMode = "default" | "nearest-3";
@@ -20,6 +21,17 @@ interface InteractiveMapProps {
    * (Now mode demand from spec.md §4.1).
    */
   autoFitMode?: AutoFitMode;
+  /**
+   * Called when the user taps "Search this area" after panning/zooming. The
+   * bbox is the current viewport in {sw,ne}{Lat,Lon} form. When omitted the
+   * search-this-area button is not rendered.
+   */
+  onSearchArea?: (bbox: {
+    swLat: number;
+    swLon: number;
+    neLat: number;
+    neLon: number;
+  }) => void;
 }
 
 function FitToBounds({
@@ -103,6 +115,7 @@ export function InteractiveMap({
   selectedId,
   onSelect,
   autoFitMode = "default",
+  onSearchArea,
 }: InteractiveMapProps) {
   const userIcon = useMemo(() => createUserLocationIcon(), []);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -125,6 +138,7 @@ export function InteractiveMap({
         maxZoom={19}
       />
       <FitToBounds centre={centre} locations={locations} autoFitMode={autoFitMode} />
+      {onSearchArea ? <SearchThisAreaButton onTrigger={onSearchArea} /> : null}
       {userPosition ? (
         <Marker
           position={[userPosition.lat, userPosition.lon]}
