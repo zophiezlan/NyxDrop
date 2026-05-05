@@ -416,6 +416,8 @@ describe("filterByAbsenceOfBarriers", () => {
       partnerOrgId: null,
       thnObjectId: null,
       nswNspListing: null,
+      vicNspListing: null,
+      vicNspSuppliesNaloxone: null,
       addedByDeviceKey: null,
       addedAt: NOW,
       totalReportsCount: 0,

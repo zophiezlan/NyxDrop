@@ -279,7 +279,12 @@ function SheetBodyNow({ location }: { location: LocationWithConsensus }) {
 function RegistryFact({ location }: { location: LocationWithConsensus }) {
   const onThn = location.thnObjectId != null;
   const onNswNsp = location.nswNspListing != null;
-  if (!onThn && !onNswNsp) return null;
+  const onVicNsp = location.vicNspListing != null;
+  const vicSuppliesNaloxone = location.vicNspSuppliesNaloxone === true;
+  if (!onThn && !onNswNsp && !onVicNsp) return null;
+  const vicListingLabel = location.vicNspListing
+    ? location.vicNspListing.replace(/_/g, " ")
+    : "";
   const closingNote =
     "Whether stock is available today is a separate question — see the visitor reports below.";
   return (
@@ -314,6 +319,23 @@ function RegistryFact({ location }: { location: LocationWithConsensus }) {
             Needle and Syringe Program outlet
           </a>
           .
+        </p>
+      ) : null}
+      {onVicNsp ? (
+        <p>
+          Victorian Department of Health lists this as a{" "}
+          <span className="font-medium">{vicListingLabel}</span>{" "}
+          <a
+            href="https://www.health.vic.gov.au/aod-treatment-services/needle-and-syringe-program"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-700 underline focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-700"
+          >
+            Needle and Syringe Program outlet
+          </a>
+          {vicSuppliesNaloxone
+            ? " — funded to supply naloxone through the NSP."
+            : "."}
         </p>
       ) : null}
       <p className="text-neutral-500">{closingNote}</p>

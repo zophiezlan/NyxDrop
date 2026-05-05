@@ -49,6 +49,17 @@ export type VerificationLevel = (typeof VERIFICATION_LEVELS)[number];
 export const NSW_NSP_LISTINGS = ["primary", "secondary", "pharmacy"] as const;
 export type NswNspListing = (typeof NSW_NSP_LISTINGS)[number];
 
+// Victorian DHHS publishes its NSP outlets via a CartoDB endpoint with an
+// `operating_model` field. Same constitutional rule (D-013).
+export const VIC_NSP_LISTINGS = [
+  "fixed_site",
+  "secure_dispensing",
+  "vehicle_outreach",
+  "pharmacy",
+  "foot_patrol",
+] as const;
+export type VicNspListing = (typeof VIC_NSP_LISTINGS)[number];
+
 export const LOCATION_TAGS = [
   "wheelchair_accessible",
   "no_id_required",
@@ -150,6 +161,22 @@ export const locations = pgTable("locations", {
    * mean stock is available today.
    */
   nswNspListing: text("nsw_nsp_listing", { enum: NSW_NSP_LISTINGS }),
+
+  /**
+   * If this row appears in Victorian DHHS's NSP outlet directory, the
+   * operating-model classification. `null` if not on the Vic list.
+   * Set by `server/scripts/import-vic-nsp.ts`; same D-013 rule.
+   */
+  vicNspListing: text("vic_nsp_listing", { enum: VIC_NSP_LISTINGS }),
+
+  /**
+   * The Vic dataset has a separate `naloxone` boolean indicating the
+   * outlet is funded to supply naloxone through the NSP (distinct from
+   * being in the THN registry, which covers pharmacies). Surfaced as a
+   * neutral fact, not a trust signal — stock today is still a separate
+   * question (D-013).
+   */
+  vicNspSuppliesNaloxone: boolean("vic_nsp_supplies_naloxone"),
 
   addedByDeviceKey: text("added_by_device_key"),
   addedAt: timestamp("added_at").notNull().defaultNow(),
@@ -422,6 +449,10 @@ export const insertLocationSchema = createInsertSchema(locations)
     thnObjectId: true,
     // nswNspListing is set only by the NSW NSP importer, never by clients.
     nswNspListing: true,
+    // vicNspListing + vicNspSuppliesNaloxone are set only by the Vic NSP
+    // importer, never by clients.
+    vicNspListing: true,
+    vicNspSuppliesNaloxone: true,
   })
   .extend({
     name: z.string().min(1).max(200),

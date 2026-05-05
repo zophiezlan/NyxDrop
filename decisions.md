@@ -211,14 +211,17 @@ heading arrow, etc.).
 ## D-013 — Government registry membership is NOT a trust signal
 
 **Status:** decided
-**Date:** 2026-05-05 (extended for NSW NSP source 2026-05-05)
+**Date:** 2026-05-05 (extended for NSW NSP and Vic NSP sources 2026-05-06)
 
 The Australian Government Take Home Naloxone Program publishes a
 participating-site registry via ArcGIS (see `server/scripts/import-thn.ts`).
 NSW Health publishes a parallel directory of NSP outlets (primary,
 secondary, and pharmacies) as CSVs (see
-`server/scripts/import-nsw-nsp.ts`). Both will likely have peers as more
-states publish similar data.
+`server/scripts/import-nsw-nsp.ts`). Victorian DHHS publishes its NSP
+outlet directory via a CartoDB SQL endpoint, with an extra `naloxone`
+boolean indicating which outlets are funded to supply naloxone through
+the NSP (see `server/scripts/import-vic-nsp.ts`). Other states will
+likely follow.
 
 Importing any of them gave us a tempting shortcut: tag every imported row
 with `verificationLevel: "official"` and let pin colour reflect
@@ -241,6 +244,13 @@ the very phenomenon the constitution requires us to surface.
    - `locations.thn_object_id` — OBJECTID from the THN locator
    - `locations.nsw_nsp_listing` — `primary` / `secondary` / `pharmacy`
      (the NSW sub-list this row is on)
+   - `locations.vic_nsp_listing` — `fixed_site` / `secure_dispensing` /
+     `vehicle_outreach` / `pharmacy` / `foot_patrol` (the Vic
+     `operating_model`)
+   - `locations.vic_nsp_supplies_naloxone` — boolean from the Vic dataset's
+     `naloxone` field, indicating the outlet is *funded* to supply
+     naloxone through the NSP. Same rule: a funded-to-supply flag is not a
+     stock-available-today claim.
    These are presence flags, not trust scores. They never enter consensus
    math, pin colour, pin size, reliability stars, or the verification
    badge.
@@ -254,13 +264,14 @@ the very phenomenon the constitution requires us to surface.
    how visitors are treated when they ask. That second layer is what this
    app exists to provide."
 5. Importers are idempotent and run by hand (or on a future cron):
-   `npm run db:import-thn` then `npm run db:import-nsw-nsp`. Order matters
-   because the NSW importer geo-dedups against existing rows; running it
-   second lets it enrich THN rows with phone/hours where the NSW data has
-   them. They should never run as part of `db:push` or a migration —
-   data is operational, not structural.
-6. The NSW importer never overwrites community-edited `phone` or `hours`;
-   it fills only when the existing field is null.
+   `npm run db:import-thn`, then `npm run db:import-nsw-nsp`, then
+   `npm run db:import-vic-nsp`. Order matters because the NSW and Vic
+   importers geo-dedup against existing rows; running them after THN lets
+   them enrich the national rows with phone/hours and state-specific
+   listing flags. They should never run as part of `db:push` or a
+   migration — data is operational, not structural.
+6. State importers never overwrite community-edited `phone` or `hours`;
+   they fill only when the existing field is null.
 
 This decision is load-bearing. If a future feature looks like it would let
 "on a government list" surface as a quality signal anywhere on the surface
