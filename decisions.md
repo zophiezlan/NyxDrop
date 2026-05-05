@@ -115,8 +115,8 @@ sheets, not on `/about`.
 
 ## D-005 — Daily metrics job idempotency
 
-**Status:** deferred (resolve in Phase 6)
-**Date:** 2026-05-04
+**Status:** deferred (revisit in Phase 8 if traffic warrants it)
+**Date:** 2026-05-04 → updated 2026-05-05
 
 plan.md says the daily-metrics aggregation runs "cron-ish via setInterval."
 Process restarts risk double-firing for a given date. Fix: before each
@@ -124,8 +124,13 @@ increment, check whether `daily_metrics` already has a row for the target
 date with the metric in question — UPSERT pattern with `ON CONFLICT (date) DO
 UPDATE` or a `WHERE NOT EXISTS` guard.
 
-Defer the actual implementation to Phase 6 (when the metrics job lands).
-Flagging here so it isn't forgotten.
+**2026-05-05 update:** Phase 6 shipped a `/api/metrics/summary` endpoint that
+computes the three `/about` counters live from `locations` + `reports` with a
+5-minute in-memory cache (server/routes/metrics.ts). At current data volumes
+this is fine; the `daily_metrics` aggregation job is an optimisation and a
+prerequisite for *historical* metrics, neither of which Phase 6 needs. The job
+remains deferred. Revisit if `/about` becomes hot enough that the live query
+shows up in DB load, or when someone wants a 30-day trend chart.
 
 ---
 
@@ -148,8 +153,8 @@ icon-per-type mapping in `spec.md` §2.2 once decided.
 
 ## D-007 — i18n locale switch must trigger React re-render
 
-**Status:** open (resolve in Phase 6)
-**Date:** 2026-05-04
+**Status:** decided
+**Date:** 2026-05-04 → resolved 2026-05-05
 
 The i18n module sketched in plan.md uses a module-scoped table that
 `setLocale()` mutates. React won't re-render on this. Need either:
@@ -159,7 +164,14 @@ The i18n module sketched in plan.md uses a module-scoped table that
 - Or accept a full reload on locale change (`window.location.reload()`),
   which is simpler but ugly.
 
-Resolve in Phase 6. Default to context if no objection.
+**Resolution:** subscribe-pattern (no Context). `client/src/lib/i18n.ts`
+exposes a module-scoped `subscribe(fn)` callback list. Components call
+`useT()` which subscribes for the lifetime of the component and forces a
+re-render when `setActiveLocale()` fires. `useAppPreferences` calls
+`ensureLocale(prefs.locale)` whenever preferences change, which loads the
+locale file and activates it. Avoids Context to keep a single import surface
+and dodge the context-provider boilerplate; subscribe pattern is fine here
+because the broadcast is rare (only on language switch).
 
 ---
 
@@ -173,3 +185,49 @@ Tailwind. That's incorrect — Tailwind compiles to a static CSS file and
 doesn't need it. The actual cause is Leaflet's inline `style="..."` attributes
 on map elements (popups, marker positioning, etc.). When updating CSP later,
 search for Leaflet, not Tailwind.
+
+---
+
+## D-009 — `UserLocationDot` is rendered inline, not a separate component
+
+**Status:** decided
+**Date:** 2026-05-05
+
+tasks.md Phase 1 lists `client/src/components/map/UserLocationDot.tsx` as a
+deliverable. The implementation renders the user-location marker inline
+inside `InteractiveMap.tsx` via `<Marker>` + `createUserLocationIcon()`
+(client/src/components/map/pin-icon.ts).
+
+No reason to extract: it is one Marker with one icon, configured by one
+`userPosition` prop, tightly coupled to the leaflet map context. A separate
+component would be a wrapper without behaviour. Constitution XII: three
+similar lines beat a clever helper.
+
+Revisit only if the user-location representation grows (accuracy ring,
+heading arrow, etc.).
+
+---
+
+## D-010 — Vercel deploy: server-side `@shared/*` aliases must not leak past compile
+
+**Status:** decided
+**Date:** 2026-05-05
+
+Vercel's `@vercel/node` runtime compiles each `.ts` file in the function's
+import graph individually and does **not** resolve TypeScript path aliases.
+A server file that imports from `@shared/schema` will compile to a `.js`
+file that still says `from "@shared/schema"`, which Node ESM then tries to
+resolve as an npm package — `ERR_MODULE_NOT_FOUND` at runtime, every API
+endpoint 500s.
+
+**Resolution:** server-side code (`server/**`) uses **relative imports with
+`.js` extensions** (`../../shared/schema.js`) for cross-package imports. The
+`@/`, `@shared/`, `@server/` aliases in `tsconfig.json` and `vite.config.ts`
+remain available for client code (Vite resolves them at build time) and for
+type-only imports if needed, but server-side runtime imports must be
+relative.
+
+This bug existed for the entire window between the Vercel migration and
+2026-05-05; production was 500'ing on every API call. The triage that
+caught it also produced this rule. Don't introduce new `@shared/*` imports
+under `server/**` without re-introducing the bug.

@@ -91,6 +91,11 @@
   "settings.reduced_motion": "Reduced motion",
   "settings.input": "Input",
   "settings.voice_search": "Voice search",
+  "settings.notifications": "Notifications",
+  "settings.notify_status_change": "Watch alerts: status change",
+  "settings.notify_guardian_note": "Watch alerts: guardian notes",
+  "settings.notify_region": "Region: new places near home",
+  "settings.notify_region_disabled_hint": "Tag a saved place as Home to enable",
   "settings.about_link": "About this app",
   "settings.forget_link": "Forget this device",
 

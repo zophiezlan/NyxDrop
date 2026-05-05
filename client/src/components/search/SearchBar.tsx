@@ -50,6 +50,7 @@ export function SearchBar({ geo, voiceEnabled = true, locale, onPick }: SearchBa
           <input
             ref={inputRef}
             type="search"
+            role="combobox"
             value={query}
             placeholder={t("search.placeholder")}
             onChange={(e) => {
@@ -66,7 +67,8 @@ export function SearchBar({ geo, voiceEnabled = true, locale, onPick }: SearchBa
             }}
             className="flex-1 bg-transparent py-2.5 text-sm placeholder-neutral-400 focus:outline-none"
             aria-label="Search locations"
-            aria-expanded={open && results.data && results.data.length > 0}
+            aria-autocomplete="list"
+            aria-expanded={!!(open && results.data && results.data.length > 0)}
             aria-controls="search-results"
           />
           {query ? (

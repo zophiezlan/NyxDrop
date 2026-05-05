@@ -150,19 +150,19 @@ export default function AboutRoute() {
       <Section id="contact" title="Contact">
         <ul className="space-y-1">
           <li>
-            <a className="text-blue-700 hover:underline" href="mailto:guardians@example.org">
+            <a className="text-blue-700 underline" href="mailto:guardians@example.org">
               guardians@example.org
             </a>{" "}
             — community partners issuing notes
           </li>
           <li>
-            <a className="text-blue-700 hover:underline" href="mailto:partners@example.org">
+            <a className="text-blue-700 underline" href="mailto:partners@example.org">
               partners@example.org
             </a>{" "}
             — health services, NSPs, AOD orgs
           </li>
           <li>
-            <a className="text-blue-700 hover:underline" href="mailto:hello@example.org">
+            <a className="text-blue-700 underline" href="mailto:hello@example.org">
               hello@example.org
             </a>{" "}
             — everything else
@@ -189,7 +189,7 @@ function Toc() {
       <ul className="space-y-1 text-sm">
         {items.map(([id, label]) => (
           <li key={id}>
-            <a className="text-blue-700 hover:underline" href={`#${id}`}>
+            <a className="text-blue-700 underline" href={`#${id}`}>
               {label}
             </a>
           </li>

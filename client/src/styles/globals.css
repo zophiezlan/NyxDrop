@@ -68,3 +68,10 @@ html {
 .nl-high-contrast [role="dialog"] {
   border-color: var(--nl-hc-border) !important;
 }
+
+/* Leaflet's default attribution link colour (#0078a8 on #dcdcdc) fails
+   WCAG AA contrast (3.6:1, needs 4.5:1). Override with a darker blue that
+   passes AA against Leaflet's grey background. */
+.leaflet-control-attribution a {
+  color: #003c7e !important;
+}

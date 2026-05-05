@@ -18,6 +18,14 @@ export interface AppPreferences {
   /** ISO language code; full i18n switching lands when locales/<lang>.json
    *  is filled by community translators (constitution X). */
   locale: "en" | "zh" | "ar" | "es" | "vi" | "ko";
+  /**
+   * Notification type filters (spec §12.3). The Service Worker / server are
+   * expected to honour these once payload type tagging lands; for now they
+   * are user-controlled preferences that any future filtering layer can read.
+   */
+  notifyWatchStatusChange: boolean;
+  notifyWatchGuardianNote: boolean;
+  notifyRegionNewPlaces: boolean;
 }
 
 const STORAGE_KEY = "nl.preferences";
@@ -29,6 +37,9 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   reducedMotion: false,
   voiceSearchEnabled: true,
   locale: "en",
+  notifyWatchStatusChange: true,
+  notifyWatchGuardianNote: true,
+  notifyRegionNewPlaces: false,
 };
 
 function read(): AppPreferences {

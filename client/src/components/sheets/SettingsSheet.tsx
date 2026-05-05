@@ -11,6 +11,7 @@ import {
   type Theme,
 } from "@/hooks/use-app-preferences";
 import { isVoiceSearchSupported } from "@/hooks/use-voice-search";
+import { useWatches } from "@/hooks/use-watches";
 
 interface SettingsSheetProps {
   preferences: AppPreferences;
@@ -27,6 +28,8 @@ export function SettingsSheet({
 }: SettingsSheetProps) {
   const t = useT();
   const sheetRef = useRef<HTMLDivElement>(null);
+  const watches = useWatches();
+  const hasActiveWatches = (watches.data?.length ?? 0) > 0;
 
   useEffect(() => {
     sheetRef.current?.focus();
@@ -159,6 +162,28 @@ export function SettingsSheet({
           </Section>
         ) : null}
 
+        {hasActiveWatches ? (
+          <Section title={t("settings.notifications")}>
+            <ToggleRow
+              label={t("settings.notify_status_change")}
+              checked={preferences.notifyWatchStatusChange}
+              onChange={(b) => update("notifyWatchStatusChange", b)}
+            />
+            <ToggleRow
+              label={t("settings.notify_guardian_note")}
+              checked={preferences.notifyWatchGuardianNote}
+              onChange={(b) => update("notifyWatchGuardianNote", b)}
+            />
+            <ToggleRow
+              label={t("settings.notify_region")}
+              description={t("settings.notify_region_disabled_hint")}
+              checked={preferences.notifyRegionNewPlaces}
+              onChange={(b) => update("notifyRegionNewPlaces", b)}
+              disabled
+            />
+          </Section>
+        ) : null}
+
         <Section title="About">
           <a
             href="/about"
@@ -239,14 +264,20 @@ function ToggleRow({
   description,
   checked,
   onChange,
+  disabled,
 }: {
   label: string;
   description?: string;
   checked: boolean;
   onChange: (b: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
-    <label className="flex items-start justify-between gap-3 rounded-lg px-1 py-2 cursor-pointer">
+    <label
+      className={`flex items-start justify-between gap-3 rounded-lg px-1 py-2 ${
+        disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+      }`}
+    >
       <span>
         <span className="block text-sm">{label}</span>
         {description ? (
@@ -258,10 +289,11 @@ function ToggleRow({
         role="switch"
         aria-checked={checked}
         aria-label={label}
-        onClick={() => onChange(!checked)}
+        disabled={disabled}
+        onClick={() => !disabled && onChange(!checked)}
         className={`relative h-6 w-11 rounded-full transition-colors ${
           checked ? "bg-neutral-900" : "bg-neutral-300"
-        }`}
+        } disabled:cursor-not-allowed`}
       >
         <span
           className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
