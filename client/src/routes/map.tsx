@@ -46,6 +46,9 @@ interface ReportState {
 interface ToastState {
   message: string;
   tone?: "info" | "warn";
+  /** Optional click handler; turns the toast into a tappable refresh prompt. */
+  onAction?: () => void;
+  actionLabel?: string;
 }
 
 type Bbox = { swLat: number; swLon: number; neLat: number; neLon: number };
@@ -115,6 +118,24 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [mode, setMode]);
+
+  // Phase 8: surface a "tap to refresh" toast when a new service worker
+  // version is waiting. Tapping the action triggers the SW skipWaiting
+  // and the page reloads (sw-register.ts). The toast persists until the
+  // user dismisses or actions it.
+  useEffect(() => {
+    const onUpdate = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ activate: () => void }>).detail;
+      setToast({
+        message: t("sw.update_available"),
+        tone: "info",
+        actionLabel: t("sw.refresh"),
+        onAction: detail.activate,
+      });
+    };
+    window.addEventListener("nl:sw-update-available", onUpdate);
+    return () => window.removeEventListener("nl:sw-update-available", onUpdate);
+  }, [t]);
 
   // Compose all the client-side filters: barrier-hide (algorithms.md §4),
   // naloxone form, accessibility tags. Server already applied type, verif,
@@ -253,6 +274,9 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
         <Toast
           message={toast.message}
           tone={toast.tone}
+          actionLabel={toast.actionLabel}
+          onAction={toast.onAction}
+          duration={toast.onAction ? 0 : 5000}
           onClose={() => setToast(null)}
         />
       ) : null}

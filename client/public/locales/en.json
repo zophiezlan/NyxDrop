@@ -114,5 +114,8 @@
   "about.privacy_paragraph": "We do not have accounts. Your device gets a random key stored only in your browser. Reports are anonymous. You can erase the key any time.",
 
   "errors.api_unreachable": "Could not reach the server. The map may be empty until the connection is back.",
-  "errors.forget_device_failed": "Could not contact the server. Try again."
+  "errors.forget_device_failed": "Could not contact the server. Try again.",
+
+  "sw.update_available": "New version available.",
+  "sw.refresh": "Refresh"
 }

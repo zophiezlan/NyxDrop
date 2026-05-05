@@ -208,6 +208,37 @@ heading arrow, etc.).
 
 ---
 
+## D-011 — Service worker caches HTTP responses in Cache API, not IndexedDB
+
+**Status:** decided
+**Date:** 2026-05-05
+
+plan.md § "Offline queue" specifies an IndexedDB store named
+`cached-locations` that the SW reads to serve `/api/locations` requests
+when the network fails.
+
+**Resolution:** the Phase 8 SW uses the **Cache Storage API** for all HTTP
+response caching (app shell, map tiles, `/api/locations*`, static assets)
+and reserves IndexedDB for the offline-report queue (the existing
+`pending-reports` store).
+
+Reasons:
+- Cache API is purpose-built for response caching — `match(req)` against
+  Request objects is exactly what we want; the SW writes are idiomatic
+  `cache.put(req, res.clone())`.
+- IDB for response bytes would require manual headers/body
+  serialisation, MIME re-derivation, and duplicate code paths between
+  the SW and any client reader.
+- Constitution XII: build the simple version first.
+
+If a future feature needs to read the cached pin payload from React (rather
+than only via fetch interception), we can add an IDB shadow store at that
+point. So far no feature needs that — the React app uses TanStack Query's
+in-memory cache for its own purposes, and the SW's Cache API view is
+sufficient for the offline-pins demo gate.
+
+---
+
 ## D-010 — Vercel deploy: server-side `@shared/*` aliases must not leak past compile
 
 **Status:** decided
