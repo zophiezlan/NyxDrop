@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
   insertReportSchema,
   type InsertReport,
-} from "@shared/schema";
+} from "../../shared/schema.js";
 import {
   listReportsForLocation,
   submitReport,

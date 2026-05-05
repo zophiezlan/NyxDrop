@@ -2,8 +2,8 @@ import webpush, { type SendResult } from "web-push";
 import { and, eq, gte, isNull, or } from "drizzle-orm";
 import { db, schema } from "./db.js";
 import { logger } from "./logger.js";
-import type { PinFlipKind } from "@shared/consensus";
-import type { PinStatus } from "@shared/schema";
+import type { PinFlipKind } from "../../shared/consensus.js";
+import type { PinStatus } from "../../shared/schema.js";
 
 let initialised = false;
 

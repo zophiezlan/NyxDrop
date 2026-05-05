@@ -4,7 +4,7 @@ import { and, eq, gte, isNull, sql } from "drizzle-orm";
 import type { NextFunction, Request, Response } from "express";
 import { db, schema } from "./db.js";
 import { logger } from "./logger.js";
-import type { Guardian } from "@shared/schema";
+import type { Guardian } from "../../shared/schema.js";
 
 // =============================================================================
 // Token shape: 32 random bytes base64url-encoded. Shown once at issuance,

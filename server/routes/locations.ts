@@ -1,7 +1,7 @@
 import { Router, type Request } from "express";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { z } from "zod";
-import { insertLocationSchema, insertCorrectionSchema } from "@shared/schema";
+import { insertLocationSchema, insertCorrectionSchema } from "../../shared/schema.js";
 import { db, schema } from "../lib/db.js";
 import {
   getLocationsWithConsensus,

@@ -7,8 +7,8 @@ import {
   calculatePinStatus,
   calculateReliabilityScore,
   classifyPinFlip,
-} from "@shared/consensus";
-import type { InsertReport, Report, ReportType } from "@shared/schema";
+} from "../../shared/consensus.js";
+import type { InsertReport, Report, ReportType } from "../../shared/schema.js";
 
 const SEVENTY_TWO_HOURS_MS = 72 * 60 * 60 * 1000;
 

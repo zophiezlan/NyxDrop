@@ -2,7 +2,7 @@ import { Router, type Request } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "../lib/db.js";
-import { insertWatchSchema } from "@shared/schema";
+import { insertWatchSchema } from "../../shared/schema.js";
 import { logger } from "../lib/logger.js";
 
 const router: Router = Router();

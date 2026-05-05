@@ -4,7 +4,7 @@ import {
   composeLocationWithConsensus,
   haversineDistance,
   surfaceBarrierFacts,
-} from "@shared/consensus";
+} from "../../shared/consensus.js";
 import type {
   GuardianNoteWithGuardian,
   Location,
@@ -12,8 +12,8 @@ import type {
   LocationWithConsensus,
   Report,
   VerificationLevel,
-} from "@shared/schema";
-import { LOCATION_TYPES, VERIFICATION_LEVELS } from "@shared/schema";
+} from "../../shared/schema.js";
+import { LOCATION_TYPES, VERIFICATION_LEVELS } from "../../shared/schema.js";
 
 // -----------------------------------------------------------------------------
 // Filters accepted by the list endpoint. Each is optional.

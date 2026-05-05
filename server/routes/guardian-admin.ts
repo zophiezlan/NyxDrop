@@ -17,7 +17,7 @@ import {
   setSessionCookie,
   verifyTokenAndGetGuardian,
 } from "../lib/auth.js";
-import type { AuditAction } from "@shared/schema";
+import type { AuditAction } from "../../shared/schema.js";
 
 const router: Router = Router();
 

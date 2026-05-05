@@ -3,8 +3,8 @@ import "dotenv/config";
 import { db, schema } from "../lib/db.js";
 import { logger } from "../lib/logger.js";
 import { sql } from "drizzle-orm";
-import { calculateReliabilityScore } from "@shared/consensus";
-import type { BarrierValue, ReportType } from "@shared/schema";
+import { calculateReliabilityScore } from "../../shared/consensus.js";
+import type { BarrierValue, ReportType } from "../../shared/schema.js";
 
 type DbInsertLocation = typeof schema.locations.$inferInsert;
 
