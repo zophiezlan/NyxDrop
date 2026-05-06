@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation as useWouterLocation } from "wouter";
 import { api, ApiError } from "@/lib/api";
 import { relativeTime } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import type { LocationWithConsensus } from "@shared/schema";
 
 interface GuardianMe {
@@ -26,6 +27,7 @@ interface MyNote {
 }
 
 export default function GuardianDashboardRoute() {
+  const t = useT();
   const [, navigate] = useWouterLocation();
   const me = useQuery({
     queryKey: ["guardian-me"],
@@ -41,7 +43,7 @@ export default function GuardianDashboardRoute() {
   if (me.isLoading) {
     return (
       <main className="min-h-dvh flex items-center justify-center text-sm text-fg-muted">
-        Loading…
+        {t("actions.loading")}
       </main>
     );
   }
@@ -52,10 +54,10 @@ export default function GuardianDashboardRoute() {
     <main className="mx-auto max-w-2xl px-4 py-8 text-fg space-y-6">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Guardian admin</h1>
+          <h1 className="text-2xl font-semibold">{t("guardian.dashboard_title")}</h1>
           <p className="mt-1 text-sm text-fg-muted">
             {guardian.firstName} — {guardian.organisation}
-            {guardian.isAdmin ? " · super-admin" : null}
+            {guardian.isAdmin ? ` · ${t("guardian.super_admin")}` : null}
           </p>
         </div>
         <LogoutButton />
@@ -69,6 +71,7 @@ export default function GuardianDashboardRoute() {
 }
 
 function LogoutButton() {
+  const t = useT();
   const [, navigate] = useWouterLocation();
   const qc = useQueryClient();
   const m = useMutation({
@@ -84,12 +87,13 @@ function LogoutButton() {
       onClick={() => m.mutate()}
       className="rounded-xl border border-nl-border-input px-3 py-1.5 text-xs text-fg-secondary hover:bg-nl-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary"
     >
-      Sign out
+      {t("actions.sign_out")}
     </button>
   );
 }
 
 function PostNote({ guardian }: { guardian: GuardianMe["guardian"] }) {
+  const t = useT();
   const qc = useQueryClient();
   const [locationId, setLocationId] = useState<string>("");
   const [noteText, setNoteText] = useState("");
@@ -119,16 +123,15 @@ function PostNote({ guardian }: { guardian: GuardianMe["guardian"] }) {
     },
     onError: (err: unknown) => {
       if (err instanceof ApiError) setError(err.message);
-      else setError("Could not post the note.");
+      else setError(t("guardian.error_post_note"));
     },
   });
 
   return (
     <section className="rounded-2xl border border-nl-border bg-surface p-5 shadow-sm">
-      <h2 className="text-lg font-semibold">Post a note</h2>
+      <h2 className="text-lg font-semibold">{t("guardian.post_note")}</h2>
       <p className="mt-1 text-sm text-fg-muted">
-        Notes show above algorithmic data on the public detail sheet, signed
-        with your first name and organisation.
+        {t("guardian.post_note_description")}
       </p>
       <form
         className="mt-4 space-y-3"
@@ -136,11 +139,11 @@ function PostNote({ guardian }: { guardian: GuardianMe["guardian"] }) {
           e.preventDefault();
           setError(null);
           if (!locationId) {
-            setError("Pick a location.");
+            setError(t("guardian.error_pick_location"));
             return;
           }
           if (noteText.trim().length === 0) {
-            setError("Write something.");
+            setError(t("guardian.error_write_something"));
             return;
           }
           post.mutate();
@@ -148,14 +151,14 @@ function PostNote({ guardian }: { guardian: GuardianMe["guardian"] }) {
       >
         <label className="block">
           <span className="block text-sm font-medium text-fg-secondary mb-1">
-            Location
+            {t("guardian.location_label")}
           </span>
           <select
             value={locationId}
             onChange={(e) => setLocationId(e.target.value)}
             className="w-full rounded-xl border border-nl-border-input bg-surface px-3 py-2 text-sm text-fg focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
           >
-            <option value="">— select —</option>
+            <option value="">{t("guardian.location_placeholder")}</option>
             {pickable.map((loc) => (
               <option key={loc.id} value={loc.id}>
                 {loc.name}
@@ -164,20 +167,20 @@ function PostNote({ guardian }: { guardian: GuardianMe["guardian"] }) {
           </select>
           {!guardian.isAdmin && pickable.length === 0 ? (
             <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-              You have no affiliated locations yet. Ask your admin to add some.
+              {t("guardian.no_affiliated")}
             </p>
           ) : null}
         </label>
         <label className="block">
           <span className="block text-sm font-medium text-fg-secondary mb-1">
-            Note (≤ 500 chars)
+            {t("guardian.note_label")}
           </span>
           <textarea
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
             maxLength={500}
             rows={3}
-            placeholder="Ask for me at the back counter; open till 9 PM weekdays."
+            placeholder={t("guardian.note_placeholder")}
             className="w-full rounded-xl border border-nl-border-input bg-surface px-3 py-2 text-sm text-fg placeholder-fg-faint focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary resize-none"
           />
           <p className="text-xs text-fg-faint text-end">{noteText.length} / 500</p>
@@ -192,7 +195,7 @@ function PostNote({ guardian }: { guardian: GuardianMe["guardian"] }) {
           disabled={post.isPending}
           className="w-full rounded-xl bg-nl-primary px-3 py-2.5 text-sm font-medium text-nl-on-primary hover:bg-nl-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary disabled:opacity-50 transition-transform"
         >
-          {post.isPending ? "Posting…" : "Post note"}
+          {post.isPending ? t("guardian.posting") : t("guardian.post")}
         </button>
       </form>
     </section>
@@ -200,6 +203,7 @@ function PostNote({ guardian }: { guardian: GuardianMe["guardian"] }) {
 }
 
 function MyNotes() {
+  const t = useT();
   const qc = useQueryClient();
   const notes = useQuery({
     queryKey: ["guardian-my-notes"],
@@ -214,11 +218,11 @@ function MyNotes() {
 
   return (
     <section className="rounded-2xl border border-nl-border bg-surface p-5 shadow-sm">
-      <h2 className="text-lg font-semibold">My notes</h2>
+      <h2 className="text-lg font-semibold">{t("guardian.my_notes")}</h2>
       {notes.isLoading ? (
-        <p className="mt-2 text-sm text-fg-muted">Loading…</p>
+        <p className="mt-2 text-sm text-fg-muted">{t("actions.loading")}</p>
       ) : !notes.data || notes.data.length === 0 ? (
-        <p className="mt-2 text-sm text-fg-muted">No notes yet.</p>
+        <p className="mt-2 text-sm text-fg-muted">{t("guardian.no_notes")}</p>
       ) : (
         <ul className="mt-3 divide-y divide-nl-divider">
           {notes.data.map((n) => (
@@ -231,8 +235,8 @@ function MyNotes() {
               <div className="mt-1 flex items-center justify-between">
                 <span className="text-xs text-fg-muted">
                   {n.archivedAt
-                    ? `Archived ${relativeTime(n.archivedAt)}`
-                    : `Updated ${relativeTime(n.updatedAt)}`}
+                    ? t("guardian.archived_time").replace("{time}", relativeTime(n.archivedAt))
+                    : t("guardian.updated_time").replace("{time}", relativeTime(n.updatedAt))}
                 </span>
                 {!n.archivedAt ? (
                   <button
@@ -240,7 +244,7 @@ function MyNotes() {
                     onClick={() => remove.mutate(n.id)}
                     className="text-xs text-red-700 dark:text-red-400 hover:underline focus:outline-none focus:underline"
                   >
-                    Archive
+                    {t("guardian.archive")}
                   </button>
                 ) : null}
               </div>
@@ -253,9 +257,10 @@ function MyNotes() {
 }
 
 function SuperAdminPanel() {
+  const t = useT();
   return (
     <section className="rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50/40 dark:bg-blue-950/40 p-5 shadow-sm">
-      <h2 className="text-lg font-semibold">Super-admin</h2>
+      <h2 className="text-lg font-semibold">{t("guardian.super_admin_panel")}</h2>
       <IssueTokenForm />
       <AuditLog />
     </section>
@@ -269,6 +274,7 @@ interface IssueTokenResponse {
 }
 
 function IssueTokenForm() {
+  const t = useT();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -303,13 +309,13 @@ function IssueTokenForm() {
     },
     onError: (err: unknown) => {
       if (err instanceof ApiError) setError(err.message);
-      else setError("Could not issue the token.");
+      else setError(t("guardian.error_issue_token"));
     },
   });
 
   return (
     <div className="mt-3 space-y-3">
-      <h3 className="text-sm font-medium">Issue token</h3>
+      <h3 className="text-sm font-medium">{t("guardian.issue_token")}</h3>
       <form
         className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm"
         onSubmit={(e) => {
@@ -317,12 +323,12 @@ function IssueTokenForm() {
           issue.mutate();
         }}
       >
-        <Input label="First name" value={firstName} onChange={setFirstName} required />
-        <Input label="Last name" value={lastName} onChange={setLastName} required />
-        <Input label="Email" type="email" value={email} onChange={setEmail} required />
-        <Input label="Organisation" value={organisation} onChange={setOrganisation} required />
+        <Input label={t("guardian.field_first_name")} value={firstName} onChange={setFirstName} required />
+        <Input label={t("guardian.field_last_name")} value={lastName} onChange={setLastName} required />
+        <Input label={t("guardian.field_email")} type="email" value={email} onChange={setEmail} required />
+        <Input label={t("guardian.field_organisation")} value={organisation} onChange={setOrganisation} required />
         <label className="sm:col-span-2 block">
-          <span className="block text-xs text-fg-secondary mb-1">Affiliated locations</span>
+          <span className="block text-xs text-fg-secondary mb-1">{t("guardian.affiliated_locations")}</span>
           <select
             multiple
             value={affiliated}
@@ -338,7 +344,7 @@ function IssueTokenForm() {
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-fg-muted">Hold Ctrl/⌘ to multi-select.</p>
+          <p className="mt-1 text-xs text-fg-muted">{t("guardian.multi_select_hint")}</p>
         </label>
         <label className="sm:col-span-2 inline-flex items-center gap-2 text-xs">
           <input
@@ -346,7 +352,7 @@ function IssueTokenForm() {
             checked={isAdmin}
             onChange={(e) => setIsAdmin(e.target.checked)}
           />
-          Grant super-admin
+          {t("guardian.grant_super_admin")}
         </label>
         {error ? (
           <p role="alert" className="sm:col-span-2 text-sm text-red-700 dark:text-red-400">
@@ -358,20 +364,20 @@ function IssueTokenForm() {
           disabled={issue.isPending}
           className="sm:col-span-2 rounded-xl bg-nl-primary px-3 py-2 text-sm font-medium text-nl-on-primary hover:bg-nl-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary disabled:opacity-50 transition-transform"
         >
-          {issue.isPending ? "Issuing…" : "Issue token"}
+          {issue.isPending ? t("guardian.issuing") : t("guardian.issue_token")}
         </button>
       </form>
 
       {issued ? (
         <div className="rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950 p-3 text-sm">
           <p className="font-medium text-emerald-900 dark:text-emerald-200">
-            Token issued. Copy it now — it will not be shown again.
+            {t("guardian.token_issued")}
           </p>
           <pre className="mt-2 break-all rounded bg-surface p-2 text-xs">
             {issued.token}
           </pre>
           <p className="mt-2 text-xs">
-            One-time login URL:{" "}
+            {t("guardian.login_url_label")}{" "}
             <a className="text-blue-700 dark:text-blue-400 hover:underline" href={issued.loginUrl}>
               {issued.loginUrl}
             </a>
@@ -392,6 +398,7 @@ interface AuditEntry {
 }
 
 function AuditLog() {
+  const t = useT();
   const log = useQuery({
     queryKey: ["audit-log"],
     queryFn: ({ signal }) => api<AuditEntry[]>("/api/guardian/admin/audit-log", { signal }),
@@ -399,11 +406,11 @@ function AuditLog() {
   });
   return (
     <details className="mt-4">
-      <summary className="cursor-pointer text-sm font-medium">Audit log</summary>
+      <summary className="cursor-pointer text-sm font-medium">{t("guardian.audit_log")}</summary>
       {log.isLoading ? (
-        <p className="mt-2 text-sm text-fg-muted">Loading…</p>
+        <p className="mt-2 text-sm text-fg-muted">{t("actions.loading")}</p>
       ) : !log.data || log.data.length === 0 ? (
-        <p className="mt-2 text-sm text-fg-muted">Nothing logged yet.</p>
+        <p className="mt-2 text-sm text-fg-muted">{t("guardian.audit_empty")}</p>
       ) : (
         <ul className="mt-2 space-y-1 text-xs text-fg-secondary">
           {log.data.map((row) => (

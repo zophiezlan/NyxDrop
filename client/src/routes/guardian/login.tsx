@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation as useWouterLocation } from "wouter";
 import { ApiError, api } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 interface LoginResponse {
   guardian: {
@@ -13,6 +14,7 @@ interface LoginResponse {
 }
 
 export default function GuardianLoginRoute() {
+  const t = useT();
   const [, navigate] = useWouterLocation();
   const [token, setToken] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -20,14 +22,14 @@ export default function GuardianLoginRoute() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const t = params.get("t");
-    if (t) setToken(t);
+    const tok = params.get("t");
+    if (tok) setToken(tok);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token.trim()) {
-      setError("Token is required.");
+      setError(t("guardian.token_required"));
       return;
     }
     setError(null);
@@ -41,14 +43,14 @@ export default function GuardianLoginRoute() {
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 429) {
-          setError("Too many attempts. Wait a few minutes and try again.");
+          setError(t("guardian.error_rate_limit"));
         } else if (err.status === 401) {
-          setError("Token not recognised, expired, or revoked.");
+          setError(t("guardian.error_bad_token"));
         } else {
-          setError(err.message || "Could not sign in.");
+          setError(err.message || t("guardian.error_generic"));
         }
       } else {
-        setError("Could not reach the server.");
+        setError(t("guardian.error_network"));
       }
       setSubmitting(false);
     }
@@ -61,16 +63,15 @@ export default function GuardianLoginRoute() {
         className="w-full max-w-sm rounded-2xl bg-surface p-6 shadow-md ring-1 ring-nl-ring space-y-4"
       >
         <header>
-          <h1 className="text-xl font-semibold">Guardian sign-in</h1>
+          <h1 className="text-xl font-semibold">{t("guardian.login_title")}</h1>
           <p className="mt-1 text-sm text-fg-muted">
-            Paste the token your admin sent you. Tokens are issued out of band;
-            this surface is not for the public app.
+            {t("guardian.login_description")}
           </p>
         </header>
 
         <label className="block">
           <span className="block text-sm font-medium text-fg-secondary mb-1">
-            Token
+            {t("guardian.token_label")}
           </span>
           <input
             type="password"
@@ -79,7 +80,7 @@ export default function GuardianLoginRoute() {
             autoComplete="off"
             spellCheck={false}
             className="w-full rounded-xl border border-nl-border-input bg-surface px-3 py-2.5 text-sm text-fg focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
-            aria-label="Guardian token"
+            aria-label={t("guardian.token_aria")}
           />
         </label>
 
@@ -94,11 +95,11 @@ export default function GuardianLoginRoute() {
           disabled={submitting}
           className="w-full rounded-xl bg-nl-primary px-3 py-3 text-sm font-medium text-nl-on-primary hover:bg-nl-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary disabled:opacity-50 transition-transform"
         >
-          {submitting ? "Signing in…" : "Sign in"}
+          {submitting ? t("guardian.signing_in") : t("guardian.sign_in")}
         </button>
 
         <p className="text-xs text-fg-muted">
-          Need access?{" "}
+          {t("guardian.need_access")}{" "}
           <a className="text-blue-700 dark:text-blue-400 hover:underline" href="mailto:guardians@example.org">
             guardians@example.org
           </a>

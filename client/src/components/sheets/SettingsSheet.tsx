@@ -93,8 +93,7 @@ export function SettingsSheet({
             </select>
             {!isLocaleReady(preferences.locale) ? (
               <p className="mt-1 text-xs text-fg-muted">
-                This translation is in beta. Strings fall back to English until a
-                community translator has reviewed them.
+                {t("settings.locale_beta")}
               </p>
             ) : null}
           </Field>
@@ -146,7 +145,7 @@ export function SettingsSheet({
           />
           <ToggleRow
             label={t("settings.reduced_motion")}
-            description="Disables all animations and transitions"
+            description={t("settings.reduced_motion_hint")}
             checked={preferences.reducedMotion}
             onChange={(b) => update("reducedMotion", b)}
           />
@@ -184,7 +183,7 @@ export function SettingsSheet({
           </Section>
         ) : null}
 
-        <Section title="About">
+        <Section title={t("settings.about")}>
           <a
             href="/about"
             className="block rounded-lg px-1 py-1 text-sm text-blue-700 dark:text-blue-400 hover:underline focus:outline-none focus:underline"

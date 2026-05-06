@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { api } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 interface MetricsSummary {
   totalLocations: number;
@@ -10,6 +11,7 @@ interface MetricsSummary {
 }
 
 export default function AboutRoute() {
+  const t = useT();
   const metrics = useQuery({
     queryKey: ["metrics-summary"],
     queryFn: ({ signal }) => api<MetricsSummary>("/api/metrics/summary", { signal }),
@@ -23,14 +25,14 @@ export default function AboutRoute() {
           href="/"
           className="text-sm text-blue-700 dark:text-blue-400 hover:underline focus:outline-none focus:underline"
         >
-          ← Back to the map
+          {t("actions.back_to_map")}
         </Link>
-        <h1 className="mt-3 text-2xl font-semibold">About NaloxoneLocate</h1>
+        <h1 className="mt-3 text-2xl font-semibold">{t("about.title")}</h1>
       </header>
 
-      <Toc />
+      <Toc t={t} />
 
-      <Section id="what" title="What this is">
+      <Section id="what" title={t("about.what_this_is")}>
         <p>
           A community map of naloxone access in Australia. Anonymous. No accounts.
           Built by peers. The pin colour reflects how recently visitors reported
@@ -39,7 +41,7 @@ export default function AboutRoute() {
         </p>
       </Section>
 
-      <Section id="recognise" title="How to recognise an overdose">
+      <Section id="recognise" title={t("about.recognise_overdose")}>
         <p>
           Loss of consciousness, slow or absent breathing, blue lips, gurgling or
           snoring sounds, pinpoint pupils.{" "}
@@ -55,7 +57,7 @@ export default function AboutRoute() {
         </p>
       </Section>
 
-      <Section id="nasal" title="How to use a nasal naloxone spray">
+      <Section id="nasal" title={t("about.use_nasal")}>
         <ol className="list-decimal ps-5 space-y-2">
           <li>Tilt the person&rsquo;s head back; support their neck.</li>
           <li>Insert the nozzle into one nostril until your fingers touch the bottom of their nose.</li>
@@ -63,12 +65,11 @@ export default function AboutRoute() {
           <li>Stay with them. If breathing doesn&rsquo;t resume in 2-3 minutes, give a second dose in the other nostril.</li>
         </ol>
         <p className="mt-3 text-sm text-fg-muted">
-          Diagram placeholder — a community-illustrated version lands before
-          first launch.
+          {t("about.diagram_placeholder")}
         </p>
       </Section>
 
-      <Section id="injectable" title="How to use injectable naloxone">
+      <Section id="injectable" title={t("about.use_injectable")}>
         <ol className="list-decimal ps-5 space-y-2">
           <li>Remove the cap from the syringe.</li>
           <li>Inject into the upper outer thigh muscle (through clothes if needed).</li>
@@ -76,39 +77,39 @@ export default function AboutRoute() {
           <li>Stay with them. If breathing doesn&rsquo;t resume in 2-3 minutes, give a second dose.</li>
         </ol>
         <p className="mt-3 text-sm text-fg-muted">
-          Diagram placeholder — illustrated version lands before first launch.
+          {t("about.diagram_placeholder_injectable")}
         </p>
       </Section>
 
-      <Section id="numbers" title="The map by the numbers">
+      <Section id="numbers" title={t("about.numbers")}>
         {metrics.isLoading ? (
-          <p className="text-sm text-fg-muted">Loading…</p>
+          <p className="text-sm text-fg-muted">{t("actions.loading")}</p>
         ) : metrics.isError || !metrics.data ? (
-          <p className="text-sm text-red-700 dark:text-red-400">Could not load metrics right now.</p>
+          <p className="text-sm text-red-700 dark:text-red-400">{t("about.metrics_error")}</p>
         ) : (
           <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
             <Counter
-              label="locations on the map"
+              label={t("about.metric_locations")}
               value={metrics.data.totalLocations.toLocaleString()}
             />
             <Counter
-              label="reports in the last 30 days"
+              label={t("about.metric_reports")}
               value={metrics.data.reportsLast30Days.toLocaleString()}
             />
             <Counter
-              label="got naloxone in the last 30 days"
+              label={t("about.metric_success_rate")}
               value={`${Math.round(metrics.data.successShareLast30Days * 100)}%`}
             />
           </ul>
         )}
         {metrics.data ? (
           <p className="mt-2 text-xs text-fg-muted">
-            Last updated {new Date(metrics.data.lastUpdated).toLocaleString("en-AU")}
+            {t("about.last_updated").replace("{date}", new Date(metrics.data.lastUpdated).toLocaleString("en-AU"))}
           </p>
         ) : null}
       </Section>
 
-      <Section id="trust" title="How we know what we know">
+      <Section id="trust" title={t("about.trust_model")}>
         <p>
           Every pin&rsquo;s colour reflects only the last 72 hours of reports,
           weighted so a fresh report counts twice as much as a two-day-old one.
@@ -161,40 +162,39 @@ export default function AboutRoute() {
         </p>
       </Section>
 
-      <Section id="privacy" title="Privacy">
+      <Section id="privacy" title={t("about.privacy")}>
         <p>
-          We do not have accounts. Your device gets a random key stored only in
-          your browser. Reports are anonymous. You can erase the key any time.
+          {t("about.privacy_paragraph")}
         </p>
         <p className="mt-3">
           <Link
             href="/me"
             className="text-blue-700 dark:text-blue-400 hover:underline focus:outline-none focus:underline"
           >
-            Open My Places to forget this device →
+            {t("my_places.forget_open")}
           </Link>
         </p>
       </Section>
 
-      <Section id="contact" title="Contact">
+      <Section id="contact" title={t("about.contact")}>
         <ul className="space-y-1">
           <li>
             <a className="text-blue-700 dark:text-blue-400 underline" href="mailto:guardians@example.org">
               guardians@example.org
             </a>{" "}
-            — community partners issuing notes
+            — {t("about.contact_guardians")}
           </li>
           <li>
             <a className="text-blue-700 dark:text-blue-400 underline" href="mailto:partners@example.org">
               partners@example.org
             </a>{" "}
-            — health services, NSPs, AOD orgs
+            — {t("about.contact_partners")}
           </li>
           <li>
             <a className="text-blue-700 dark:text-blue-400 underline" href="mailto:hello@example.org">
               hello@example.org
             </a>{" "}
-            — everything else
+            — {t("about.contact_hello")}
           </li>
         </ul>
       </Section>
@@ -202,19 +202,19 @@ export default function AboutRoute() {
   );
 }
 
-function Toc() {
+function Toc({ t }: { t: (key: string) => string }) {
   const items: Array<[string, string]> = [
-    ["what", "What this is"],
-    ["recognise", "How to recognise an overdose"],
-    ["nasal", "How to use a nasal naloxone spray"],
-    ["injectable", "How to use injectable naloxone"],
-    ["numbers", "The map by the numbers"],
-    ["trust", "How we know what we know"],
-    ["privacy", "Privacy"],
-    ["contact", "Contact"],
+    ["what", t("about.what_this_is")],
+    ["recognise", t("about.recognise_overdose")],
+    ["nasal", t("about.use_nasal")],
+    ["injectable", t("about.use_injectable")],
+    ["numbers", t("about.numbers")],
+    ["trust", t("about.trust_model")],
+    ["privacy", t("about.privacy")],
+    ["contact", t("about.contact")],
   ];
   return (
-    <nav aria-label="On this page" className="mb-8 rounded-xl bg-surface-inset px-4 py-3">
+    <nav aria-label={t("about.toc_label")} className="mb-8 rounded-xl bg-surface-inset px-4 py-3">
       <ul className="space-y-1 text-sm">
         {items.map(([id, label]) => (
           <li key={id}>
