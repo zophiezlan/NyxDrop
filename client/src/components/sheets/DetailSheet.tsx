@@ -22,17 +22,16 @@ import type {
 interface DetailSheetProps {
   locationId: string;
   geo?: { lat: number; lon: number };
-  /** Plan = full layout. Now = minimal sheet (spec.md §4.2). */
   mode?: "plan" | "now";
   onClose: () => void;
   onReport: () => void;
 }
 
 const STATUS_DOT: Record<PinStatus, { tone: string; symbol: string }> = {
-  green: { tone: "text-green-700 bg-green-50 border-green-200", symbol: "●" },
-  amber: { tone: "text-amber-700 bg-amber-50 border-amber-200", symbol: "△" },
-  red: { tone: "text-red-700 bg-red-50 border-red-200", symbol: "✗" },
-  grey: { tone: "text-neutral-600 bg-neutral-50 border-neutral-200", symbol: "○" },
+  green: { tone: "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800", symbol: "●" },
+  amber: { tone: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800", symbol: "△" },
+  red: { tone: "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800", symbol: "✗" },
+  grey: { tone: "text-fg-muted bg-surface-inset border-nl-border", symbol: "○" },
 };
 
 const REPORT_GLYPH: Record<Report["reportType"], string> = {
@@ -65,7 +64,6 @@ export function DetailSheet({
   const detailQuery = useLocationDetail(locationId, geo);
   const sheetRef = useRef<HTMLDivElement>(null);
 
-  // Move focus to the sheet when it opens for keyboard / screen-reader users.
   useEffect(() => {
     sheetRef.current?.focus();
   }, [locationId]);
@@ -85,13 +83,13 @@ export function DetailSheet({
       role="dialog"
       aria-modal="false"
       aria-labelledby="detail-name"
-      className="fixed inset-x-0 bottom-0 z-30 max-h-[80dvh] overflow-y-auto rounded-t-2xl border-t bg-white shadow-2xl outline-none"
+      className="fixed inset-x-0 bottom-0 z-30 max-h-[80dvh] overflow-y-auto rounded-t-2xl border-t border-nl-border bg-surface shadow-2xl outline-none animate-sheet-up"
     >
       <div className="flex justify-center pt-2">
-        <div className="h-1 w-10 rounded-full bg-neutral-300" aria-hidden="true" />
+        <div className="h-1 w-10 rounded-full bg-fg-faint/40" aria-hidden="true" />
       </div>
 
-      <div className="px-5 pt-3 pb-6 text-neutral-900">
+      <div className="px-5 pt-3 pb-8 text-fg">
         {detailQuery.isLoading ? (
           <SheetSkeleton />
         ) : detailQuery.isError || !detailQuery.data ? (
@@ -105,7 +103,7 @@ export function DetailSheet({
         <div className="mt-6 flex justify-end">
           <button
             type="button"
-            className="text-sm text-neutral-600 hover:text-neutral-900 focus:outline-none focus:underline"
+            className="text-sm text-fg-muted hover:text-fg focus:outline-none focus:underline"
             onClick={onClose}
           >
             Close
@@ -119,10 +117,10 @@ export function DetailSheet({
 function SheetSkeleton() {
   return (
     <div className="space-y-3 animate-pulse">
-      <div className="h-5 w-2/3 rounded bg-neutral-200" />
-      <div className="h-3 w-1/2 rounded bg-neutral-200" />
-      <div className="h-12 rounded bg-neutral-100" />
-      <div className="h-32 rounded bg-neutral-100" />
+      <div className="h-5 w-2/3 rounded bg-surface-inset" />
+      <div className="h-3 w-1/2 rounded bg-surface-inset" />
+      <div className="h-12 rounded bg-surface-inset" />
+      <div className="h-32 rounded bg-surface-inset" />
     </div>
   );
 }
@@ -130,14 +128,14 @@ function SheetSkeleton() {
 function SheetError({ onClose }: { onClose: () => void }) {
   return (
     <div className="text-sm">
-      <p className="font-medium text-neutral-900">Could not load this place.</p>
-      <p className="mt-1 text-neutral-600">
+      <p className="font-medium text-fg">Could not load this place.</p>
+      <p className="mt-1 text-fg-muted">
         Check your connection and try again. The map&rsquo;s last-loaded pins
         should still be visible behind this sheet.
       </p>
       <button
         type="button"
-        className="mt-4 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs hover:bg-neutral-50"
+        className="mt-4 rounded-xl border border-nl-border-input px-3 py-1.5 text-xs hover:bg-nl-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary"
         onClick={onClose}
       >
         Dismiss
@@ -160,9 +158,9 @@ function SheetBody({
         <h2 id="detail-name" className="text-lg font-semibold leading-tight">
           {location.name}
         </h2>
-        <p className="mt-0.5 text-sm text-neutral-600">{location.address}</p>
+        <p className="mt-0.5 text-sm text-fg-muted">{location.address}</p>
         {location.distance !== undefined ? (
-          <p className="mt-0.5 text-xs text-neutral-500">
+          <p className="mt-0.5 text-xs text-fg-muted">
             {formatDistanceKm(location.distance)} away
           </p>
         ) : null}
@@ -176,24 +174,24 @@ function SheetBody({
           </span>
           {location.reliabilityStars > 0 ? (
             <span
-              className="inline-flex items-center gap-1 text-xs text-neutral-700"
+              className="inline-flex items-center gap-1 text-xs text-fg-secondary"
               aria-label={`Reliability ${location.reliabilityStars} out of 5 from ${location.totalReportsCount} reports`}
             >
               {"★".repeat(location.reliabilityStars)}
-              <span className="text-neutral-400">
+              <span className="text-fg-faint">
                 {"★".repeat(Math.max(0, 5 - location.reliabilityStars))}
               </span>
-              <span className="text-neutral-500">
+              <span className="text-fg-muted">
                 ({location.totalReportsCount} reports)
               </span>
             </span>
           ) : null}
           {location.verificationLevel === "official" ? (
-            <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs text-blue-700">
+            <span className="rounded-full bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 px-2 py-0.5 text-xs text-blue-700 dark:text-blue-300">
               Official partner
             </span>
           ) : location.verificationLevel === "community_verified" ? (
-            <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs text-emerald-700">
+            <span className="rounded-full bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-300">
               Community verified
             </span>
           ) : null}
@@ -210,10 +208,6 @@ function SheetBody({
   );
 }
 
-/**
- * Minimal Now-mode sheet (spec.md §4.2). No stars, no timeline, no save —
- * don't tax a person in crisis with information they can't act on.
- */
 function SheetBodyNow({ location }: { location: LocationWithConsensus }) {
   const status = STATUS_DOT[location.pinStatus];
   const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
@@ -226,7 +220,7 @@ function SheetBodyNow({ location }: { location: LocationWithConsensus }) {
         <h2 id="detail-name" className="text-lg font-semibold leading-tight">
           {location.name}
         </h2>
-        <p className="mt-1 text-sm text-neutral-700">
+        <p className="mt-1 text-sm text-fg-secondary">
           {location.distance !== undefined ? `${formatDistanceKm(location.distance)} away` : null}
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -236,7 +230,7 @@ function SheetBodyNow({ location }: { location: LocationWithConsensus }) {
             <span aria-hidden="true">{status.symbol}</span>
             {location.consensusLabel}
           </span>
-          <span className="text-xs text-neutral-700">
+          <span className="text-xs text-fg-secondary">
             {formList.join(" + ")}
           </span>
         </div>
@@ -246,19 +240,19 @@ function SheetBodyNow({ location }: { location: LocationWithConsensus }) {
           href={directionsHref}
           target="_blank"
           rel="noreferrer"
-          className="rounded-xl bg-neutral-900 px-3 py-3 text-center text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+          className="rounded-xl bg-nl-primary px-3 py-3 text-center text-nl-on-primary hover:bg-nl-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
         >
           ↗ Directions
         </a>
         {location.phone ? (
           <a
             href={`tel:${location.phone}`}
-            className="rounded-xl border border-neutral-300 px-3 py-3 text-center text-neutral-900 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+            className="rounded-xl border border-nl-border-input px-3 py-3 text-center text-fg hover:bg-nl-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
           >
             📞 Call this place
           </a>
         ) : (
-          <span className="rounded-xl border border-neutral-200 px-3 py-3 text-center text-neutral-400">
+          <span className="rounded-xl border border-nl-border px-3 py-3 text-center text-fg-faint">
             No phone listed
           </span>
         )}
@@ -267,15 +261,6 @@ function SheetBodyNow({ location }: { location: LocationWithConsensus }) {
   );
 }
 
-/**
- * Neutral fact panel for locations that appear on a government registry
- * (THN nationwide, NSW NSP, possibly more sources later). Constitution V +
- * D-013: registry membership is NOT a trust signal. Being listed means the
- * operator has signed up to participate; it does NOT mean stock is
- * available today. Rendered as a small grey panel below guardian notes and
- * above the algorithmic data so a reader knows it's context, not a
- * verification badge.
- */
 function RegistryFact({ location }: { location: LocationWithConsensus }) {
   const onThn = location.thnObjectId != null;
   const onNswNsp = location.nswNspListing != null;
@@ -289,7 +274,7 @@ function RegistryFact({ location }: { location: LocationWithConsensus }) {
     "Whether stock is available today is a separate question — see the visitor reports below.";
   return (
     <section
-      className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-700 space-y-2"
+      className="mt-4 rounded-xl border border-nl-border bg-surface-inset p-3 text-xs text-fg-secondary space-y-2"
       aria-label="Registry information"
     >
       {onThn ? (
@@ -299,7 +284,7 @@ function RegistryFact({ location }: { location: LocationWithConsensus }) {
             href="https://www.health.gov.au/our-work/take-home-naloxone-program"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-700 underline focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-700"
+            className="text-blue-700 dark:text-blue-400 underline focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-700"
           >
             Take Home Naloxone Program
           </a>{" "}
@@ -314,7 +299,7 @@ function RegistryFact({ location }: { location: LocationWithConsensus }) {
             href="https://www.health.nsw.gov.au/aod/Pages/nsp-finder.aspx"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-700 underline focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-700"
+            className="text-blue-700 dark:text-blue-400 underline focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-700"
           >
             Needle and Syringe Program outlet
           </a>
@@ -329,7 +314,7 @@ function RegistryFact({ location }: { location: LocationWithConsensus }) {
             href="https://www.health.vic.gov.au/aod-treatment-services/needle-and-syringe-program"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-700 underline focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-700"
+            className="text-blue-700 dark:text-blue-400 underline focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-700"
           >
             Needle and Syringe Program outlet
           </a>
@@ -338,7 +323,7 @@ function RegistryFact({ location }: { location: LocationWithConsensus }) {
             : "."}
         </p>
       ) : null}
-      <p className="text-neutral-500">{closingNote}</p>
+      <p className="text-fg-muted">{closingNote}</p>
     </section>
   );
 }
@@ -354,17 +339,17 @@ function GuardianNotes({
       {notes.map((note) => (
         <div
           key={note.id}
-          className="rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-sm"
+          className="rounded-xl border border-blue-100 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/60 p-3 text-sm"
         >
-          <div className="flex items-center gap-1 text-blue-900">
+          <div className="flex items-center gap-1 text-blue-900 dark:text-blue-200">
             <span aria-hidden="true">💬</span>
             <span className="font-medium">{note.guardianFirstName}</span>
-            <span className="text-blue-700/80">
+            <span className="text-blue-700/80 dark:text-blue-400/80">
               (verified guardian, {note.guardianOrganisation})
             </span>
           </div>
-          <p className="mt-1 text-blue-900">{note.noteText}</p>
-          <p className="mt-1 text-xs text-blue-700/70">
+          <p className="mt-1 text-blue-900 dark:text-blue-200">{note.noteText}</p>
+          <p className="mt-1 text-xs text-blue-700/70 dark:text-blue-400/70">
             {relativeTime(note.updatedAt)}
           </p>
         </div>
@@ -386,7 +371,7 @@ function Facts({ location }: { location: LocationWithConsensus }) {
         <FactRow
           label="Phone"
           value={
-            <a className="text-blue-700 hover:underline" href={`tel:${location.phone}`}>
+            <a className="text-blue-700 dark:text-blue-400 hover:underline" href={`tel:${location.phone}`}>
               {location.phone}
             </a>
           }
@@ -397,7 +382,7 @@ function Facts({ location }: { location: LocationWithConsensus }) {
           label="Website"
           value={
             <a
-              className="text-blue-700 hover:underline"
+              className="text-blue-700 dark:text-blue-400 hover:underline"
               href={location.website}
               target="_blank"
               rel="noreferrer"
@@ -416,7 +401,7 @@ function Facts({ location }: { location: LocationWithConsensus }) {
               {location.tags.map((t) => (
                 <span
                   key={t}
-                  className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700"
+                  className="rounded-full bg-surface-inset px-2 py-0.5 text-xs text-fg-secondary"
                 >
                   {t.replace(/_/g, " ")}
                 </span>
@@ -435,10 +420,10 @@ function Facts({ location }: { location: LocationWithConsensus }) {
 function FactRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-wide text-neutral-500">
+      <dt className="text-xs uppercase tracking-wide text-fg-muted">
         {label}
       </dt>
-      <dd className="mt-0.5 text-neutral-900">{value}</dd>
+      <dd className="mt-0.5 text-fg">{value}</dd>
     </div>
   );
 }
@@ -447,17 +432,17 @@ function BarrierFactsList({ facts }: { facts: BarrierFact[] }) {
   if (facts.length === 0) return null;
   return (
     <section className="mt-5">
-      <h3 className="text-xs uppercase tracking-wide text-neutral-500">
+      <h3 className="text-xs uppercase tracking-wide text-fg-muted">
         From recent reports
       </h3>
       <ul className="mt-2 space-y-1 text-sm">
         {facts.map((f) => {
           const tone =
             f.kind === "rare"
-              ? "text-emerald-700"
+              ? "text-emerald-700 dark:text-emerald-400"
               : f.kind === "frequent"
-                ? "text-amber-700"
-                : "text-neutral-700";
+                ? "text-amber-700 dark:text-amber-400"
+                : "text-fg-secondary";
           const symbol = f.kind === "rare" ? "⊘" : f.kind === "frequent" ? "△" : "·";
           return (
             <li key={f.barrier} className={`flex items-start gap-2 ${tone}`}>
@@ -481,16 +466,16 @@ function RecentReports({
   if (reports.length === 0) {
     return (
       <section className="mt-5">
-        <h3 className="text-xs uppercase tracking-wide text-neutral-500">
+        <h3 className="text-xs uppercase tracking-wide text-fg-muted">
           Recent reports
         </h3>
-        <p className="mt-2 text-sm text-neutral-500">No reports yet.</p>
+        <p className="mt-2 text-sm text-fg-muted">No reports yet.</p>
       </section>
     );
   }
   return (
     <section className="mt-5">
-      <h3 className="text-xs uppercase tracking-wide text-neutral-500">
+      <h3 className="text-xs uppercase tracking-wide text-fg-muted">
         Recent reports
       </h3>
       <ul className="mt-2 space-y-1 text-sm">
@@ -499,7 +484,7 @@ function RecentReports({
             <span aria-hidden="true" className="w-3">
               {REPORT_GLYPH[r.reportType]}
             </span>
-            <span className="text-neutral-700">
+            <span className="text-fg-secondary">
               {relativeTime(r.submittedAt)} — {reportLineForRow(r)}
               {r.costAmount ? ` (${formatAud(r.costAmount)})` : ""}
             </span>
@@ -507,7 +492,7 @@ function RecentReports({
         ))}
       </ul>
       {total > 5 ? (
-        <p className="mt-2 text-xs text-neutral-500">+ {total - 5} more</p>
+        <p className="mt-2 text-xs text-fg-muted">+ {total - 5} more</p>
       ) : null}
     </section>
   );
@@ -548,9 +533,6 @@ function Actions({
       unwatch.mutate(watchRow.id);
       return;
     }
-    // Pre-prompt before browser permission ask is the *creation* of the
-    // watch entry — it implicitly says "yes, I want notifications about
-    // this place." Then we ask the OS for the permission.
     watch.mutate(
       { locationId: location.id },
       {
@@ -569,7 +551,7 @@ function Actions({
         <button
           type="button"
           onClick={onReport}
-          className="rounded-xl border border-neutral-300 px-3 py-2 text-neutral-900 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+          className="rounded-xl border border-nl-border-input px-3 py-2 text-fg hover:bg-nl-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
           aria-label="Report a visit to this place"
         >
           ⊕ I went here
@@ -580,10 +562,10 @@ function Actions({
           disabled={save.isPending || unsave.isPending}
           aria-pressed={!!savedRow}
           aria-label={savedRow ? `Unsave ${location.name}` : `Save ${location.name}`}
-          className={`rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900 ${
+          className={`rounded-xl border px-3 py-2 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform ${
             savedRow
-              ? "bg-neutral-900 text-white border-neutral-900"
-              : "border-neutral-300 text-neutral-900 hover:bg-neutral-50"
+              ? "bg-nl-primary text-nl-on-primary border-nl-primary"
+              : "border-nl-border-input text-fg hover:bg-nl-hover"
           }`}
         >
           {savedRow ? "🔖 Saved" : "🔖 Save"}
@@ -594,10 +576,10 @@ function Actions({
           disabled={watch.isPending || unwatch.isPending}
           aria-pressed={!!watchRow}
           aria-label={watchRow ? `Stop watching ${location.name}` : `Watch ${location.name}`}
-          className={`rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900 ${
+          className={`rounded-xl border px-3 py-2 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform ${
             watchRow
-              ? "bg-neutral-900 text-white border-neutral-900"
-              : "border-neutral-300 text-neutral-900 hover:bg-neutral-50"
+              ? "bg-nl-primary text-nl-on-primary border-nl-primary"
+              : "border-nl-border-input text-fg hover:bg-nl-hover"
           }`}
         >
           {watchRow ? "🔔 Watching" : "🔔 Watch"}
@@ -607,7 +589,7 @@ function Actions({
         href={directionsHref}
         target="_blank"
         rel="noreferrer"
-        className="block w-full rounded-xl bg-neutral-900 px-3 py-3 text-center text-sm text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+        className="block w-full rounded-xl bg-nl-primary px-3 py-3 text-center text-sm text-nl-on-primary hover:bg-nl-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
       >
         ↗ Directions
       </a>

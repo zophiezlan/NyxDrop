@@ -4,13 +4,56 @@
 
 :root {
   color-scheme: light dark;
-  /* Drives `font-size` on <html>; consumers using `rem` units scale with it.
-     Settings sheet adjusts via the slider (12-24px). */
   --nl-font-size: 16px;
+
+  --nl-surface: 255 255 255;
+  --nl-surface-dim: 250 250 250;
+  --nl-surface-raised: 255 255 255;
+  --nl-surface-inset: 245 245 245;
+  --nl-text: 23 23 23;
+  --nl-text-secondary: 64 64 64;
+  --nl-text-muted: 115 115 115;
+  --nl-text-faint: 163 163 163;
+  --nl-border: 229 229 229;
+  --nl-border-input: 212 212 212;
+  --nl-ring: 229 229 229;
+  --nl-divider: 245 245 245;
+  --nl-primary: 23 23 23;
+  --nl-on-primary: 255 255 255;
+  --nl-primary-hover: 38 38 38;
+  --nl-hover: 250 250 250;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --nl-surface: 23 23 23;
+  --nl-surface-dim: 10 10 10;
+  --nl-surface-raised: 38 38 38;
+  --nl-surface-inset: 15 15 15;
+  --nl-text: 245 245 245;
+  --nl-text-secondary: 163 163 163;
+  --nl-text-muted: 115 115 115;
+  --nl-text-faint: 82 82 82;
+  --nl-border: 64 64 64;
+  --nl-border-input: 82 82 82;
+  --nl-ring: 64 64 64;
+  --nl-divider: 38 38 38;
+  --nl-primary: 245 245 245;
+  --nl-on-primary: 23 23 23;
+  --nl-primary-hover: 229 229 229;
+  --nl-hover: 38 38 38;
 }
 
 html {
   font-size: var(--nl-font-size);
+}
+
+@layer base {
+  body {
+    background-color: rgb(var(--nl-surface-dim));
+    color: rgb(var(--nl-text));
+  }
 }
 
 /* Always-on motion respect for users with the OS preference set. The
@@ -35,29 +78,33 @@ html {
   scroll-behavior: auto !important;
 }
 
-/* High-contrast mode (constitution IX, spec.md §12.1). Swaps neutral
-   greys for stronger contrast and forces a heavier focus ring. */
+/* High-contrast mode (constitution IX, spec.md §12.1). Overrides the
+   semantic CSS variables to force maximum contrast. */
 .nl-high-contrast {
-  --nl-hc-bg: #ffffff;
-  --nl-hc-fg: #000000;
-  --nl-hc-border: #000000;
+  --nl-surface: 255 255 255;
+  --nl-surface-dim: 255 255 255;
+  --nl-surface-raised: 255 255 255;
+  --nl-surface-inset: 245 245 245;
+  --nl-text: 0 0 0;
+  --nl-text-secondary: 0 0 0;
+  --nl-text-muted: 0 0 0;
+  --nl-text-faint: 64 64 64;
+  --nl-border: 0 0 0;
+  --nl-border-input: 0 0 0;
+  --nl-ring: 0 0 0;
+  --nl-divider: 0 0 0;
+  --nl-primary: 0 0 0;
+  --nl-on-primary: 255 255 255;
+  --nl-primary-hover: 32 32 32;
+  --nl-hover: 230 230 230;
   --nl-hc-link: #003eb3;
   --nl-hc-focus: #ffbf00;
-}
-.nl-high-contrast body {
-  background: var(--nl-hc-bg) !important;
-  color: var(--nl-hc-fg) !important;
 }
 .nl-high-contrast a,
 .nl-high-contrast button[class*="text-blue"],
 .nl-high-contrast a[class*="text-blue"] {
   color: var(--nl-hc-link) !important;
   text-decoration: underline;
-}
-.nl-high-contrast .text-neutral-500,
-.nl-high-contrast .text-neutral-600,
-.nl-high-contrast .text-neutral-700 {
-  color: var(--nl-hc-fg) !important;
 }
 .nl-high-contrast :focus-visible {
   outline: 3px solid var(--nl-hc-focus) !important;
@@ -66,7 +113,7 @@ html {
 .nl-high-contrast button,
 .nl-high-contrast [role="button"],
 .nl-high-contrast [role="dialog"] {
-  border-color: var(--nl-hc-border) !important;
+  border-color: rgb(var(--nl-border)) !important;
 }
 
 /* Leaflet's default attribution link colour (#0078a8 on #dcdcdc) fails
@@ -74,4 +121,17 @@ html {
    passes AA against Leaflet's grey background. */
 .leaflet-control-attribution a {
   color: #003c7e !important;
+}
+
+/* Sheet slide-up animation. Used by all bottom sheets for polish. */
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.animate-sheet-up {
+  animation: sheet-up 0.25s ease-out;
 }

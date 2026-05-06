@@ -56,20 +56,20 @@ export function SettingsSheet({
       role="dialog"
       aria-modal="false"
       aria-labelledby="settings-title"
-      className="fixed inset-x-0 bottom-0 z-30 max-h-[90dvh] overflow-y-auto rounded-t-2xl border-t bg-white shadow-2xl outline-none"
+      className="fixed inset-x-0 bottom-0 z-30 max-h-[90dvh] overflow-y-auto rounded-t-2xl border-t border-nl-border bg-surface shadow-2xl outline-none animate-sheet-up"
     >
       <div className="flex justify-center pt-2">
-        <div className="h-1 w-10 rounded-full bg-neutral-300" aria-hidden="true" />
+        <div className="h-1 w-10 rounded-full bg-fg-faint/40" aria-hidden="true" />
       </div>
 
-      <div className="px-5 pt-3 pb-8 text-neutral-900 space-y-6">
+      <div className="px-5 pt-3 pb-8 text-fg space-y-6">
         <header className="flex items-start justify-between gap-3">
           <h2 id="settings-title" className="text-lg font-semibold">
             {t("settings.title")}
           </h2>
           <button
             type="button"
-            className="rounded-md text-sm text-neutral-500 hover:text-neutral-900 focus:outline-none focus:underline"
+            className="rounded-md text-sm text-fg-muted hover:text-fg focus:outline-none focus:underline"
             onClick={onClose}
             aria-label={t("actions.close")}
           >
@@ -82,7 +82,7 @@ export function SettingsSheet({
             <select
               value={preferences.locale}
               onChange={(e) => update("locale", e.target.value as Locale)}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+              className="w-full rounded-xl border border-nl-border-input bg-surface px-3 py-2 text-sm focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
             >
               {LOCALES.map((loc) => (
                 <option key={loc} value={loc}>
@@ -92,7 +92,7 @@ export function SettingsSheet({
               ))}
             </select>
             {!isLocaleReady(preferences.locale) ? (
-              <p className="mt-1 text-xs text-neutral-500">
+              <p className="mt-1 text-xs text-fg-muted">
                 This translation is in beta. Strings fall back to English until a
                 community translator has reviewed them.
               </p>
@@ -132,7 +132,7 @@ export function SettingsSheet({
               aria-valuemax={24}
               aria-valuenow={preferences.fontSize}
             />
-            <div className="flex justify-between text-xs text-neutral-500">
+            <div className="flex justify-between text-xs text-fg-muted">
               <span>12</span>
               <span>16</span>
               <span>24</span>
@@ -187,14 +187,14 @@ export function SettingsSheet({
         <Section title="About">
           <a
             href="/about"
-            className="block rounded-lg px-1 py-1 text-sm text-blue-700 hover:underline focus:outline-none focus:underline"
+            className="block rounded-lg px-1 py-1 text-sm text-blue-700 dark:text-blue-400 hover:underline focus:outline-none focus:underline"
           >
             {t("settings.about_link")} →
           </a>
           <button
             type="button"
             onClick={onForgetDevice}
-            className="mt-2 block w-full rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
+            className="mt-2 block w-full rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 px-3 py-2.5 text-sm text-red-800 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700 active:scale-[0.97] transition-transform"
           >
             {t("settings.forget_link")}
           </button>
@@ -213,7 +213,7 @@ function Section({
 }) {
   return (
     <section className="space-y-3">
-      <h3 className="text-xs uppercase tracking-wide text-neutral-500">{title}</h3>
+      <h3 className="text-xs uppercase tracking-wide text-fg-muted">{title}</h3>
       <div className="space-y-3">{children}</div>
     </section>
   );
@@ -228,7 +228,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-sm font-medium text-neutral-700 mb-1">{label}</span>
+      <span className="block text-sm font-medium text-fg-secondary mb-1">{label}</span>
       {children}
     </label>
   );
@@ -250,8 +250,8 @@ function SegBtn({
       aria-pressed={active}
       className={`rounded-xl border px-3 py-2 text-sm ${
         active
-          ? "border-neutral-900 bg-neutral-900 text-white"
-          : "border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50"
+          ? "bg-nl-primary text-nl-on-primary border-nl-primary"
+          : "border-nl-border-input bg-surface text-fg-secondary hover:bg-nl-hover"
       }`}
     >
       {children}
@@ -281,7 +281,7 @@ function ToggleRow({
       <span>
         <span className="block text-sm">{label}</span>
         {description ? (
-          <span className="block text-xs text-neutral-500">{description}</span>
+          <span className="block text-xs text-fg-muted">{description}</span>
         ) : null}
       </span>
       <button
@@ -292,11 +292,11 @@ function ToggleRow({
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
         className={`relative h-6 w-11 rounded-full transition-colors ${
-          checked ? "bg-neutral-900" : "bg-neutral-300"
+          checked ? "bg-nl-primary" : "bg-fg-faint"
         } disabled:cursor-not-allowed`}
       >
         <span
-          className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+          className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-surface shadow transition-transform ${
             checked ? "translate-x-5" : "translate-x-0"
           }`}
           aria-hidden="true"

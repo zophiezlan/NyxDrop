@@ -47,27 +47,27 @@ export function DrsabcdCard() {
     <aside
       role="region"
       aria-label="DRSABCD first aid steps"
-      className="fixed inset-x-3 bottom-3 z-30 max-h-[40dvh] overflow-y-auto rounded-2xl border border-red-200 bg-white px-3 py-3 text-sm shadow-xl"
+      className="fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom,12px),12px)] z-30 max-h-[40dvh] overflow-y-auto rounded-2xl border border-red-200 dark:border-red-800 bg-surface px-3 py-3 text-sm shadow-xl"
     >
       <ol className="space-y-1">
         {STEPS.map((step, i) => (
           <li key={`${step.letter}-${i}`}>
             <button
               type="button"
-              className="flex w-full items-start gap-3 rounded-md px-1 py-1 text-left hover:bg-neutral-50 focus:outline-none focus:bg-neutral-50"
+              className="flex w-full items-start gap-3 rounded-md px-1 py-1 text-left hover:bg-nl-hover focus:outline-none focus:bg-nl-hover"
               aria-expanded={open === i}
               onClick={() => setOpen(open === i ? null : i)}
             >
               <span
                 aria-hidden="true"
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-red-100 text-base font-semibold text-red-800"
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-red-100 dark:bg-red-900 text-base font-semibold text-red-800 dark:text-red-200"
               >
                 {step.letter}
               </span>
               <span className="flex-1 self-center">
                 <span className="font-medium">{step.short}</span>
                 {open === i ? (
-                  <span className="block text-xs text-neutral-700 mt-0.5">
+                  <span className="block text-xs text-fg-secondary mt-0.5">
                     {step.long}
                   </span>
                 ) : null}
@@ -76,7 +76,7 @@ export function DrsabcdCard() {
           </li>
         ))}
       </ol>
-      <p className="mt-2 border-t border-neutral-100 pt-2 text-xs text-neutral-600">
+      <p className="mt-2 border-t border-nl-divider pt-2 text-xs text-fg-muted">
         Naloxone is given alongside these steps, typically after the airway is clear.
       </p>
     </aside>

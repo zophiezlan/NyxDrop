@@ -225,7 +225,7 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
   );
 
   return (
-    <div className={`relative ${mode === "now" ? "bg-red-50" : "bg-neutral-50"}`}>
+    <div className={`relative ${mode === "now" ? "bg-red-50 dark:bg-red-950" : "bg-surface-dim"}`}>
       <Suspense fallback={<MapPlaceholder />}>
         <InteractiveMap
           centre={geo.position}
@@ -391,7 +391,7 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
 
 function MapPlaceholder() {
   return (
-    <div className="flex h-dvh w-dvw items-center justify-center bg-neutral-100 text-sm text-neutral-500">
+    <div className="flex h-dvh w-dvw items-center justify-center bg-surface-inset text-sm text-fg-muted">
       Loading the map…
     </div>
   );
@@ -414,7 +414,7 @@ function HiddenByBarrierChip({
       : `${barriers.length} soft barrier filters active`;
   return (
     <div className="fixed inset-x-3 top-3 z-30 flex items-center justify-center pointer-events-none">
-      <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs text-blue-900 shadow-md ring-1 ring-blue-200">
+      <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-blue-50 dark:bg-blue-950 px-3 py-1.5 text-xs text-blue-900 dark:text-blue-200 shadow-md ring-1 ring-blue-200 dark:ring-blue-800">
         <span>
           Hiding {count} {count === 1 ? "place" : "places"} — {phrase}
         </span>
@@ -422,7 +422,7 @@ function HiddenByBarrierChip({
           type="button"
           onClick={onClear}
           aria-label="Clear barrier filters"
-          className="ml-1 rounded-full px-1 text-blue-700 hover:bg-blue-100 focus:outline-none focus:ring-1 focus:ring-blue-700"
+          className="ml-1 rounded-full px-1 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 focus:outline-none focus:ring-1 focus:ring-blue-700"
         >
           ×
         </button>
@@ -465,7 +465,7 @@ function TopRightButtons({
         onClick={onSettings}
         aria-label="Settings"
         title="Settings"
-        className="rounded-full bg-white shadow-lg ring-1 ring-neutral-200 w-11 h-11 text-lg flex items-center justify-center hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+        className="rounded-full bg-surface shadow-lg ring-1 ring-nl-ring w-11 h-11 text-lg flex items-center justify-center hover:bg-nl-hover active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
       >
         ⚙
       </button>
@@ -474,7 +474,7 @@ function TopRightButtons({
         onClick={onMyPlaces}
         aria-label="My Places"
         title="My Places"
-        className="rounded-full bg-white shadow-lg ring-1 ring-neutral-200 w-11 h-11 text-lg flex items-center justify-center hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+        className="rounded-full bg-surface shadow-lg ring-1 ring-nl-ring w-11 h-11 text-lg flex items-center justify-center hover:bg-nl-hover active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
       >
         👤
       </button>
@@ -486,7 +486,7 @@ function ApiBanner({ message }: { message: string }) {
   return (
     <div
       role="status"
-      className="fixed inset-x-0 top-0 z-40 bg-amber-100 border-b border-amber-200 px-4 py-2 text-center text-xs text-amber-900"
+      className="fixed inset-x-0 top-0 z-40 bg-amber-100 dark:bg-amber-950 border-b border-amber-200 dark:border-amber-800 px-4 py-2 text-center text-xs text-amber-900 dark:text-amber-200"
     >
       {message}
     </div>

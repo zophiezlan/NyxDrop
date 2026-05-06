@@ -18,7 +18,6 @@ export default function GuardianLoginRoute() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Auto-fill from ?t=… one-time login URL.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const t = params.get("t");
@@ -56,21 +55,21 @@ export default function GuardianLoginRoute() {
   };
 
   return (
-    <main className="min-h-dvh flex items-center justify-center px-4 bg-neutral-50 text-neutral-900">
+    <main className="min-h-dvh flex items-center justify-center px-4 bg-surface-dim text-fg">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-md ring-1 ring-neutral-200 space-y-4"
+        className="w-full max-w-sm rounded-2xl bg-surface p-6 shadow-md ring-1 ring-nl-ring space-y-4"
       >
         <header>
           <h1 className="text-xl font-semibold">Guardian sign-in</h1>
-          <p className="mt-1 text-sm text-neutral-600">
+          <p className="mt-1 text-sm text-fg-muted">
             Paste the token your admin sent you. Tokens are issued out of band;
             this surface is not for the public app.
           </p>
         </header>
 
         <label className="block">
-          <span className="block text-sm font-medium text-neutral-700 mb-1">
+          <span className="block text-sm font-medium text-fg-secondary mb-1">
             Token
           </span>
           <input
@@ -79,13 +78,13 @@ export default function GuardianLoginRoute() {
             onChange={(e) => setToken(e.target.value)}
             autoComplete="off"
             spellCheck={false}
-            className="w-full rounded-xl border border-neutral-300 px-3 py-2.5 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+            className="w-full rounded-xl border border-nl-border-input bg-surface px-3 py-2.5 text-sm text-fg focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
             aria-label="Guardian token"
           />
         </label>
 
         {error ? (
-          <p role="alert" className="text-sm text-red-700">
+          <p role="alert" className="text-sm text-red-700 dark:text-red-400">
             {error}
           </p>
         ) : null}
@@ -93,14 +92,14 @@ export default function GuardianLoginRoute() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-xl bg-neutral-900 px-3 py-3 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900 disabled:opacity-50"
+          className="w-full rounded-xl bg-nl-primary px-3 py-3 text-sm font-medium text-nl-on-primary hover:bg-nl-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary disabled:opacity-50 transition-transform"
         >
           {submitting ? "Signing in…" : "Sign in"}
         </button>
 
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-fg-muted">
           Need access?{" "}
-          <a className="text-blue-700 hover:underline" href="mailto:guardians@example.org">
+          <a className="text-blue-700 dark:text-blue-400 hover:underline" href="mailto:guardians@example.org">
             guardians@example.org
           </a>
         </p>

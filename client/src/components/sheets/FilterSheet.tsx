@@ -15,7 +15,6 @@ export interface Filters {
   naloxoneForm: "any" | "nasal_spray" | "injectable";
   recent: boolean;
   openNow: boolean;
-  /** Barriers the user wants to hide places that "frequently" exhibit. */
   hideBarriers: BarrierValue[];
   tags: LocationTag[];
 }
@@ -121,20 +120,20 @@ export function FilterSheet({ value, onChange, onClose, onReset }: FilterSheetPr
       role="dialog"
       aria-modal="false"
       aria-labelledby="filter-title"
-      className="fixed inset-x-0 bottom-0 z-30 max-h-[90dvh] overflow-y-auto rounded-t-2xl border-t bg-white shadow-2xl outline-none"
+      className="fixed inset-x-0 bottom-0 z-30 max-h-[90dvh] overflow-y-auto rounded-t-2xl border-t border-nl-border bg-surface shadow-2xl outline-none animate-sheet-up"
     >
       <div className="flex justify-center pt-2">
-        <div className="h-1 w-10 rounded-full bg-neutral-300" aria-hidden="true" />
+        <div className="h-1 w-10 rounded-full bg-fg-faint/40" aria-hidden="true" />
       </div>
 
-      <div className="px-5 pt-3 pb-8 text-neutral-900 space-y-6">
+      <div className="px-5 pt-3 pb-8 text-fg space-y-6">
         <header className="flex items-start justify-between gap-3">
           <div className="flex items-baseline gap-2">
             <h2 id="filter-title" className="text-lg font-semibold">
               Filters
             </h2>
             {count > 0 ? (
-              <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">
+              <span className="rounded-full bg-surface-inset px-2 py-0.5 text-xs text-fg-secondary">
                 {count} active
               </span>
             ) : null}
@@ -143,7 +142,7 @@ export function FilterSheet({ value, onChange, onClose, onReset }: FilterSheetPr
             <button
               type="button"
               onClick={onReset}
-              className="text-neutral-600 hover:underline focus:outline-none focus:underline disabled:opacity-50"
+              className="text-fg-muted hover:underline focus:outline-none focus:underline disabled:opacity-50"
               disabled={count === 0}
             >
               Reset
@@ -151,14 +150,13 @@ export function FilterSheet({ value, onChange, onClose, onReset }: FilterSheetPr
             <button
               type="button"
               onClick={onClose}
-              className="text-neutral-600 hover:underline focus:outline-none focus:underline"
+              className="text-fg-muted hover:underline focus:outline-none focus:underline"
             >
               Close
             </button>
           </div>
         </header>
 
-        {/* Headline barrier filter — the priority UX element from constitution VI */}
         <Section
           title="Avoid known soft barriers"
           subtitle="Hide places that recent visitors frequently flagged"
@@ -166,12 +164,12 @@ export function FilterSheet({ value, onChange, onClose, onReset }: FilterSheetPr
           <ul className="space-y-1">
             {HEADLINE_BARRIERS.map(({ barrier, label }) => (
               <li key={barrier}>
-                <label className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-neutral-50 cursor-pointer">
+                <label className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-nl-hover cursor-pointer">
                   <input
                     type="checkbox"
                     checked={value.hideBarriers.includes(barrier)}
                     onChange={() => togglesetItem("hideBarriers", barrier)}
-                    className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
+                    className="h-4 w-4 rounded border-nl-border-input text-nl-primary focus:ring-nl-primary"
                   />
                   <span className="text-sm">{label}</span>
                 </label>
@@ -222,10 +220,10 @@ export function FilterSheet({ value, onChange, onClose, onReset }: FilterSheetPr
                 type="button"
                 onClick={() => onChange({ ...value, naloxoneForm: v })}
                 aria-pressed={value.naloxoneForm === v}
-                className={`rounded-xl border px-3 py-2 text-sm ${
+                className={`rounded-xl border px-3 py-2 text-sm transition-colors ${
                   value.naloxoneForm === v
-                    ? "border-neutral-900 bg-neutral-900 text-white"
-                    : "border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50"
+                    ? "border-nl-primary bg-nl-primary text-nl-on-primary"
+                    : "border-nl-border-input bg-surface text-fg-secondary hover:bg-nl-hover"
                 }`}
               >
                 {label}
@@ -266,7 +264,7 @@ export function FilterSheet({ value, onChange, onClose, onReset }: FilterSheetPr
         <button
           type="button"
           onClick={onClose}
-          className="w-full rounded-xl bg-neutral-900 px-3 py-3 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+          className="w-full rounded-xl bg-nl-primary px-3 py-3 text-sm font-medium text-nl-on-primary hover:bg-nl-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
         >
           Done
         </button>
@@ -286,8 +284,8 @@ function Section({
 }) {
   return (
     <section>
-      <h3 className="text-xs uppercase tracking-wide text-neutral-500">{title}</h3>
-      {subtitle ? <p className="mt-0.5 text-xs text-neutral-500">{subtitle}</p> : null}
+      <h3 className="text-xs uppercase tracking-wide text-fg-muted">{title}</h3>
+      {subtitle ? <p className="mt-0.5 text-xs text-fg-muted">{subtitle}</p> : null}
       <div className="mt-2">{children}</div>
     </section>
   );
@@ -307,10 +305,10 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded-full border px-3 py-1.5 text-xs ${
+      className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
         active
-          ? "border-neutral-900 bg-neutral-900 text-white"
-          : "border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50"
+          ? "border-nl-primary bg-nl-primary text-nl-on-primary"
+          : "border-nl-border-input bg-surface text-fg-secondary hover:bg-nl-hover"
       }`}
     >
       {children}
@@ -328,7 +326,7 @@ function Toggle({
   label: string;
 }) {
   return (
-    <label className="flex items-center justify-between gap-3 rounded-lg px-2 py-2 hover:bg-neutral-50 cursor-pointer">
+    <label className="flex items-center justify-between gap-3 rounded-lg px-2 py-2 hover:bg-nl-hover cursor-pointer">
       <span className="text-sm">{label}</span>
       <button
         type="button"
@@ -336,7 +334,7 @@ function Toggle({
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={`relative h-6 w-11 rounded-full transition-colors ${
-          checked ? "bg-neutral-900" : "bg-neutral-300"
+          checked ? "bg-nl-primary" : "bg-fg-faint"
         }`}
       >
         <span

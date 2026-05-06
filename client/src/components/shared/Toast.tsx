@@ -33,8 +33,8 @@ export function Toast({
 
   const toneClasses =
     tone === "warn"
-      ? "bg-amber-100 text-amber-900 ring-amber-200"
-      : "bg-neutral-900 text-white ring-neutral-800";
+      ? "bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 ring-amber-200 dark:ring-amber-800"
+      : "bg-nl-primary text-nl-on-primary ring-nl-primary";
 
   return (
     <div

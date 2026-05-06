@@ -19,7 +19,7 @@ const queryClient = new QueryClient({
 
 function MapLoading() {
   return (
-    <div className="min-h-dvh flex items-center justify-center text-sm text-neutral-500">
+    <div className="min-h-dvh flex items-center justify-center text-sm text-fg-muted bg-surface-dim">
       Loading the map…
     </div>
   );

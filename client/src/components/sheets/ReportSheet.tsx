@@ -152,25 +152,25 @@ export function ReportSheet({
       role="dialog"
       aria-modal="false"
       aria-labelledby="report-title"
-      className="fixed inset-x-0 bottom-0 z-30 max-h-[90dvh] overflow-y-auto rounded-t-2xl border-t bg-white shadow-2xl outline-none"
+      className="fixed inset-x-0 bottom-0 z-30 max-h-[90dvh] overflow-y-auto rounded-t-2xl border-t border-nl-border bg-surface shadow-2xl outline-none animate-sheet-up"
     >
       <div className="flex justify-center pt-2">
-        <div className="h-1 w-10 rounded-full bg-neutral-300" aria-hidden="true" />
+        <div className="h-1 w-10 rounded-full bg-fg-faint/40" aria-hidden="true" />
       </div>
 
-      <div className="px-5 pt-3 pb-8 text-neutral-900 space-y-6">
+      <div className="px-5 pt-3 pb-8 text-fg space-y-6">
         <header className="flex items-start justify-between gap-3">
           <div>
             <h2 id="report-title" className="text-lg font-semibold leading-tight">
               {preselectedLocationId ? "Tell us how it went" : "Report a visit"}
             </h2>
             {locationName ? (
-              <p className="mt-0.5 text-sm text-neutral-600">{locationName}</p>
+              <p className="mt-0.5 text-sm text-fg-muted">{locationName}</p>
             ) : null}
           </div>
           <button
             type="button"
-            className="rounded-md text-sm text-neutral-500 hover:text-neutral-900 focus:outline-none focus:underline"
+            className="rounded-md text-sm text-fg-muted hover:text-fg focus:outline-none focus:underline"
             onClick={onClose}
             aria-label="Close"
           >
@@ -227,7 +227,7 @@ export function ReportSheet({
         {stepSubmitVisible ? (
           <div className="space-y-2">
             {serverError ? (
-              <p role="alert" className="text-sm text-red-700">
+              <p role="alert" className="text-sm text-red-700 dark:text-red-400">
                 {serverError}
               </p>
             ) : null}
@@ -235,7 +235,7 @@ export function ReportSheet({
               type="button"
               disabled={!canSubmit}
               onClick={handleSubmit}
-              className="w-full rounded-xl bg-neutral-900 px-3 py-3 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-xl bg-nl-primary px-3 py-3 text-sm font-medium text-nl-on-primary hover:bg-nl-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary active:scale-[0.97] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? "Submitting…" : "Submit anonymously"}
             </button>
@@ -298,7 +298,7 @@ function WhereStep({
 
   return (
     <section aria-labelledby="step-where" className="space-y-2">
-      <h3 id="step-where" className="text-xs uppercase tracking-wide text-neutral-500">
+      <h3 id="step-where" className="text-xs uppercase tracking-wide text-fg-muted">
         Where did you go?
       </h3>
       <input
@@ -306,19 +306,19 @@ function WhereStep({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search by name or address"
-        className="w-full rounded-xl border border-neutral-300 px-3 py-2.5 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+        className="w-full rounded-xl border border-nl-border-input px-3 py-2.5 text-sm focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
         autoFocus
       />
-      <ul className="divide-y divide-neutral-100">
+      <ul className="divide-y divide-nl-divider">
         {results.map((loc) => (
           <li key={loc.id}>
             <button
               type="button"
-              className="w-full text-left py-2 hover:bg-neutral-50 focus:bg-neutral-50 focus:outline-none rounded-md px-2"
+              className="w-full text-left py-2 hover:bg-nl-hover focus:bg-nl-hover focus:outline-none rounded-md px-2"
               onClick={() => onPick(loc.id, loc.name)}
             >
               <div className="text-sm font-medium">{loc.name}</div>
-              <div className="text-xs text-neutral-500">{loc.address}</div>
+              <div className="text-xs text-fg-muted">{loc.address}</div>
             </button>
           </li>
         ))}
@@ -413,12 +413,12 @@ function AddNewLocation({
   return (
     <section aria-labelledby="add-new" className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 id="add-new" className="text-xs uppercase tracking-wide text-neutral-500">
+        <h3 id="add-new" className="text-xs uppercase tracking-wide text-fg-muted">
           Add a new place
         </h3>
         <button
           type="button"
-          className="text-xs text-neutral-600 hover:underline"
+          className="text-xs text-fg-muted hover:underline"
           onClick={onCancel}
         >
           Back to search
@@ -430,7 +430,7 @@ function AddNewLocation({
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={200}
-          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+          className="w-full rounded-xl border border-nl-border-input px-3 py-2 text-sm focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
         />
       </Field>
       <Field label="Address" required>
@@ -439,14 +439,14 @@ function AddNewLocation({
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           maxLength={300}
-          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+          className="w-full rounded-xl border border-nl-border-input px-3 py-2 text-sm focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
         />
       </Field>
       <Field label="Type" required>
         <select
           value={type}
           onChange={(e) => setType(e.target.value as LocationType)}
-          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+          className="w-full rounded-xl border border-nl-border-input px-3 py-2 text-sm focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
         >
           {(Object.keys(LOCATION_TYPE_LABELS) as LocationType[]).map((t) => (
             <option key={t} value={t}>
@@ -462,30 +462,30 @@ function AddNewLocation({
             value={latitude}
             onChange={(e) => setLatitude(e.target.value)}
             placeholder="lat"
-            className="w-1/3 rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+            className="w-1/3 rounded-xl border border-nl-border-input px-3 py-2 text-sm focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
           />
           <input
             type="text"
             value={longitude}
             onChange={(e) => setLongitude(e.target.value)}
             placeholder="lon"
-            className="w-1/3 rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+            className="w-1/3 rounded-xl border border-nl-border-input px-3 py-2 text-sm focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
           />
           <button
             type="button"
             onClick={useMyLocation}
-            className="rounded-lg border border-neutral-300 px-3 py-2 text-xs hover:bg-neutral-50"
+            className="rounded-xl border border-nl-border-input px-3 py-2 text-xs hover:bg-nl-hover"
           >
             Use my location
           </button>
         </div>
       </Field>
-      {error ? <p role="alert" className="text-sm text-red-700">{error}</p> : null}
+      {error ? <p role="alert" className="text-sm text-red-700 dark:text-red-400">{error}</p> : null}
       <button
         type="button"
         disabled={submitting}
         onClick={handleSubmit}
-        className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm hover:bg-neutral-50 disabled:opacity-50"
+        className="w-full rounded-xl border border-nl-border-input px-3 py-2 text-sm hover:bg-nl-hover active:scale-[0.97] transition-transform disabled:opacity-50"
       >
         {submitting ? "Adding…" : "Add this place"}
       </button>
@@ -504,9 +504,9 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-xs text-neutral-500 mb-1">
+      <span className="block text-xs text-fg-muted mb-1">
         {label}
-        {required ? <span className="text-red-700"> *</span> : null}
+        {required ? <span className="text-red-700 dark:text-red-400"> *</span> : null}
       </span>
       {children}
     </label>
@@ -536,7 +536,7 @@ function WhenStep({
   })();
   return (
     <section aria-labelledby="step-when" className="space-y-2">
-      <h3 id="step-when" className="text-xs uppercase tracking-wide text-neutral-500">
+      <h3 id="step-when" className="text-xs uppercase tracking-wide text-fg-muted">
         When did you visit?
       </h3>
       <div className="grid grid-cols-2 gap-2">
@@ -552,8 +552,8 @@ function WhenStep({
             onClick={() => onChange(v)}
             className={`rounded-xl border px-3 py-2 text-sm ${
               value === v
-                ? "border-neutral-900 bg-neutral-900 text-white"
-                : "border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50"
+                ? "border-nl-primary bg-nl-primary text-nl-on-primary"
+                : "border-nl-border-input bg-surface text-fg-secondary hover:bg-nl-hover"
             }`}
             aria-pressed={value === v}
           >
@@ -568,7 +568,7 @@ function WhenStep({
           max={today}
           min={minDate}
           onChange={(e) => onCustomDate(e.target.value)}
-          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+          className="w-full rounded-xl border border-nl-border-input px-3 py-2 text-sm focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
           aria-label="Visit date"
         />
       ) : null}
@@ -589,7 +589,7 @@ function WhatStep({
 }) {
   return (
     <section aria-labelledby="step-what" className="space-y-2">
-      <h3 id="step-what" className="text-xs uppercase tracking-wide text-neutral-500">
+      <h3 id="step-what" className="text-xs uppercase tracking-wide text-fg-muted">
         What happened?
       </h3>
       <div className="grid grid-cols-1 gap-2">
@@ -600,8 +600,8 @@ function WhatStep({
             onClick={() => onChange(opt.value)}
             className={`flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left text-sm ${
               value === opt.value
-                ? "border-neutral-900 bg-neutral-900 text-white"
-                : "border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50"
+                ? "border-nl-primary bg-nl-primary text-nl-on-primary"
+                : "border-nl-border-input bg-surface text-fg hover:bg-nl-hover"
             }`}
             aria-pressed={value === opt.value}
           >
@@ -613,7 +613,7 @@ function WhatStep({
               {opt.hint ? (
                 <span
                   className={`block text-xs mt-0.5 ${
-                    value === opt.value ? "text-neutral-300" : "text-neutral-500"
+                    value === opt.value ? "text-nl-on-primary/60" : "text-fg-muted"
                   }`}
                 >
                   {opt.hint}
@@ -655,27 +655,27 @@ function BarriersStep({
     reportType === "out_of_stock" ? "Anything to flag? (optional)" : "Which barriers came up?";
   return (
     <section aria-labelledby="step-barriers" className="space-y-2">
-      <h3 id="step-barriers" className="text-xs uppercase tracking-wide text-neutral-500">
+      <h3 id="step-barriers" className="text-xs uppercase tracking-wide text-fg-muted">
         {heading}
-        {required ? <span className="text-red-700"> *</span> : null}
+        {required ? <span className="text-red-700 dark:text-red-400"> *</span> : null}
       </h3>
       <ul className="space-y-1">
         {visible.map((b) => {
           const checked = selected.includes(b);
           return (
             <li key={b}>
-              <label className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-neutral-50 cursor-pointer">
+              <label className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-nl-hover cursor-pointer">
                 <input
                   type="checkbox"
                   checked={checked}
                   onChange={() => onToggle(b)}
-                  className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
+                  className="h-4 w-4 rounded border-nl-border-input text-nl-primary focus:ring-nl-primary"
                 />
                 <span className="text-sm">{BARRIER_LABEL[b]}</span>
               </label>
               {b === "cost_involved" && checked ? (
                 <div className="ml-6 mt-1">
-                  <label className="block text-xs text-neutral-500 mb-1">
+                  <label className="block text-xs text-fg-muted mb-1">
                     How much (AUD)? optional
                   </label>
                   <input
@@ -686,7 +686,7 @@ function BarriersStep({
                     value={costAmount}
                     onChange={(e) => onCostAmount(e.target.value)}
                     placeholder="40.00"
-                    className="w-32 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                    className="w-32 rounded-xl border border-nl-border-input px-3 py-1.5 text-sm focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
                   />
                 </div>
               ) : null}
@@ -711,7 +711,7 @@ function NotesStep({
 }) {
   return (
     <section aria-labelledby="step-notes" className="space-y-2">
-      <h3 id="step-notes" className="text-xs uppercase tracking-wide text-neutral-500">
+      <h3 id="step-notes" className="text-xs uppercase tracking-wide text-fg-muted">
         Anything else? (optional)
       </h3>
       <textarea
@@ -720,9 +720,9 @@ function NotesStep({
         maxLength={500}
         rows={3}
         placeholder="Tip, time of day, who to ask for, anything to say to the next person…"
-        className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 resize-none"
+        className="w-full rounded-xl border border-nl-border-input px-3 py-2 text-sm focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary resize-none"
       />
-      <p className="text-xs text-neutral-400 text-right">{value.length} / 500</p>
+      <p className="text-xs text-fg-faint text-right">{value.length} / 500</p>
     </section>
   );
 }

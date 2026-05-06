@@ -9,11 +9,6 @@ interface MetricsSummary {
   lastUpdated: string;
 }
 
-/**
- * /about — the consolidated eight-section static page (spec.md §14). Plain,
- * honest, no hero gradients, no animated bouncing icons. Constitution VII:
- * privacy is one paragraph and the erase button.
- */
 export default function AboutRoute() {
   const metrics = useQuery({
     queryKey: ["metrics-summary"],
@@ -22,11 +17,11 @@ export default function AboutRoute() {
   });
 
   return (
-    <main className="mx-auto max-w-prose px-4 py-8 text-neutral-900">
+    <main className="mx-auto max-w-prose px-4 py-8 text-fg">
       <header className="mb-6">
         <Link
           href="/"
-          className="text-sm text-blue-700 hover:underline focus:outline-none focus:underline"
+          className="text-sm text-blue-700 dark:text-blue-400 hover:underline focus:outline-none focus:underline"
         >
           ← Back to the map
         </Link>
@@ -55,7 +50,7 @@ export default function AboutRoute() {
           The seven-step DRSABCD framework — Danger, Response, Send for help,
           Airway, Breathing, Compressions, Defibrillator — appears in Now mode
           on the map. Tap the <strong>Now</strong> toggle, or open the home-screen
-          shortcut to <code>/emergency</code>, to see it on top of a stripped-down
+          shortcut to <code className="bg-surface-inset px-1 rounded">/emergency</code>, to see it on top of a stripped-down
           map of the closest pins.
         </p>
       </Section>
@@ -67,7 +62,7 @@ export default function AboutRoute() {
           <li>Press the plunger firmly to release the dose.</li>
           <li>Stay with them. If breathing doesn&rsquo;t resume in 2-3 minutes, give a second dose in the other nostril.</li>
         </ol>
-        <p className="mt-3 text-sm text-neutral-600">
+        <p className="mt-3 text-sm text-fg-muted">
           Diagram placeholder — a community-illustrated version lands before
           first launch.
         </p>
@@ -80,16 +75,16 @@ export default function AboutRoute() {
           <li>Press the plunger fully.</li>
           <li>Stay with them. If breathing doesn&rsquo;t resume in 2-3 minutes, give a second dose.</li>
         </ol>
-        <p className="mt-3 text-sm text-neutral-600">
+        <p className="mt-3 text-sm text-fg-muted">
           Diagram placeholder — illustrated version lands before first launch.
         </p>
       </Section>
 
       <Section id="numbers" title="The map by the numbers">
         {metrics.isLoading ? (
-          <p className="text-sm text-neutral-500">Loading…</p>
+          <p className="text-sm text-fg-muted">Loading…</p>
         ) : metrics.isError || !metrics.data ? (
-          <p className="text-sm text-red-700">Could not load metrics right now.</p>
+          <p className="text-sm text-red-700 dark:text-red-400">Could not load metrics right now.</p>
         ) : (
           <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
             <Counter
@@ -107,7 +102,7 @@ export default function AboutRoute() {
           </ul>
         )}
         {metrics.data ? (
-          <p className="mt-2 text-xs text-neutral-500">
+          <p className="mt-2 text-xs text-fg-muted">
             Last updated {new Date(metrics.data.lastUpdated).toLocaleString("en-AU")}
           </p>
         ) : null}
@@ -136,7 +131,7 @@ export default function AboutRoute() {
             href="https://www.health.gov.au/our-work/take-home-naloxone-program"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-700 underline"
+            className="text-blue-700 dark:text-blue-400 underline"
           >
             Australian Government Take Home Naloxone Program participating-site
             locator
@@ -146,7 +141,7 @@ export default function AboutRoute() {
             href="https://www.health.nsw.gov.au/aod/Pages/nsp-finder.aspx"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-700 underline"
+            className="text-blue-700 dark:text-blue-400 underline"
           >
             NSW Health Needle and Syringe Program outlet directory
           </a>
@@ -155,7 +150,7 @@ export default function AboutRoute() {
             href="https://www.health.vic.gov.au/aod-treatment-services/needle-and-syringe-program"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-700 underline"
+            className="text-blue-700 dark:text-blue-400 underline"
           >
             Victorian Department of Health NSP outlet directory
           </a>
@@ -174,7 +169,7 @@ export default function AboutRoute() {
         <p className="mt-3">
           <Link
             href="/me"
-            className="text-blue-700 hover:underline focus:outline-none focus:underline"
+            className="text-blue-700 dark:text-blue-400 hover:underline focus:outline-none focus:underline"
           >
             Open My Places to forget this device →
           </Link>
@@ -184,19 +179,19 @@ export default function AboutRoute() {
       <Section id="contact" title="Contact">
         <ul className="space-y-1">
           <li>
-            <a className="text-blue-700 underline" href="mailto:guardians@example.org">
+            <a className="text-blue-700 dark:text-blue-400 underline" href="mailto:guardians@example.org">
               guardians@example.org
             </a>{" "}
             — community partners issuing notes
           </li>
           <li>
-            <a className="text-blue-700 underline" href="mailto:partners@example.org">
+            <a className="text-blue-700 dark:text-blue-400 underline" href="mailto:partners@example.org">
               partners@example.org
             </a>{" "}
             — health services, NSPs, AOD orgs
           </li>
           <li>
-            <a className="text-blue-700 underline" href="mailto:hello@example.org">
+            <a className="text-blue-700 dark:text-blue-400 underline" href="mailto:hello@example.org">
               hello@example.org
             </a>{" "}
             — everything else
@@ -219,11 +214,11 @@ function Toc() {
     ["contact", "Contact"],
   ];
   return (
-    <nav aria-label="On this page" className="mb-8 rounded-xl bg-neutral-50 px-4 py-3">
+    <nav aria-label="On this page" className="mb-8 rounded-xl bg-surface-inset px-4 py-3">
       <ul className="space-y-1 text-sm">
         {items.map(([id, label]) => (
           <li key={id}>
-            <a className="text-blue-700 underline" href={`#${id}`}>
+            <a className="text-blue-700 dark:text-blue-400 underline" href={`#${id}`}>
               {label}
             </a>
           </li>
@@ -252,9 +247,9 @@ function Section({
 
 function Counter({ label, value }: { label: string; value: string }) {
   return (
-    <li className="rounded-xl border border-neutral-200 bg-white px-4 py-3">
+    <li className="rounded-xl border border-nl-border bg-surface px-4 py-3">
       <div className="text-3xl font-semibold tabular-nums">{value}</div>
-      <div className="mt-1 text-xs text-neutral-600">{label}</div>
+      <div className="mt-1 text-xs text-fg-muted">{label}</div>
     </li>
   );
 }

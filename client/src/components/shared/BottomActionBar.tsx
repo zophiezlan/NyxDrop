@@ -32,14 +32,14 @@ export function BottomActionBar({
         <button
           type="button"
           onClick={onIWentHere}
-          className="flex-1 rounded-xl bg-neutral-900 px-3 py-3 text-sm font-medium text-white shadow-lg hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+          className="flex-1 rounded-xl bg-nl-primary px-3 py-3 text-sm font-medium text-nl-on-primary shadow-lg hover:bg-nl-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
         >
           ⊕ {t("actions.i_went_here")}
         </button>
         <button
           type="button"
           onClick={onAddPlace}
-          className="flex-1 rounded-xl bg-white px-3 py-3 text-sm font-medium text-neutral-900 shadow-lg ring-1 ring-neutral-200 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+          className="flex-1 rounded-xl bg-surface px-3 py-3 text-sm font-medium text-fg shadow-lg ring-1 ring-nl-ring hover:bg-nl-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
         >
           ✚ {t("actions.add_a_place")}
         </button>
@@ -47,9 +47,9 @@ export function BottomActionBar({
           type="button"
           onClick={onFilters}
           aria-label={filtersLabel}
-          className="relative w-12 rounded-xl bg-white px-3 py-3 text-sm font-medium text-neutral-900 shadow-lg ring-1 ring-neutral-200 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+          className="relative w-12 rounded-xl bg-surface px-3 py-3 text-sm font-medium text-fg shadow-lg ring-1 ring-nl-ring hover:bg-nl-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
         >
-          ⚙
+          ☰
           {activeFilterCount > 0 ? (
             <span
               aria-hidden="true"

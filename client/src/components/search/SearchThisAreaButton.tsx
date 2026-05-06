@@ -53,7 +53,7 @@ export function SearchThisAreaButton({ onTrigger }: SearchThisAreaButtonProps) {
         <button
           type="button"
           onClick={handleClick}
-          className="rounded-full bg-white px-4 py-2 text-sm font-medium text-neutral-900 shadow-lg ring-1 ring-neutral-200 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900"
+          className="rounded-full bg-surface px-4 py-2 text-sm font-medium text-fg shadow-lg ring-1 ring-nl-ring hover:bg-nl-hover active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
         >
           🔍 Search this area
         </button>
