@@ -116,7 +116,7 @@ export function SearchBar({ geo, voiceEnabled = true, locale, onPick }: SearchBa
                       type="button"
                       role="option"
                       aria-selected="false"
-                      className="block w-full px-3 py-2 text-left hover:bg-nl-hover focus:bg-nl-hover focus:outline-none"
+                      className="block w-full px-3 py-2 text-start hover:bg-nl-hover focus:bg-nl-hover focus:outline-none"
                       onClick={() => {
                         onPick(loc);
                         setOpen(false);

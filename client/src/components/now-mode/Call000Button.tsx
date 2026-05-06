@@ -13,7 +13,7 @@ export function Call000Button() {
       aria-label="Call 000 emergency services"
       className="fixed inset-x-3 top-3 z-40 flex h-14 items-center justify-center rounded-2xl bg-red-700 px-4 text-lg font-semibold text-white shadow-xl ring-1 ring-red-800 hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
     >
-      <span aria-hidden="true" className="mr-2">📞</span>
+      <span aria-hidden="true" className="me-2">📞</span>
       {t("mode.call_000")}
     </a>
   );

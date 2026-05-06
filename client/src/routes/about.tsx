@@ -56,7 +56,7 @@ export default function AboutRoute() {
       </Section>
 
       <Section id="nasal" title="How to use a nasal naloxone spray">
-        <ol className="list-decimal pl-5 space-y-2">
+        <ol className="list-decimal ps-5 space-y-2">
           <li>Tilt the person&rsquo;s head back; support their neck.</li>
           <li>Insert the nozzle into one nostril until your fingers touch the bottom of their nose.</li>
           <li>Press the plunger firmly to release the dose.</li>
@@ -69,7 +69,7 @@ export default function AboutRoute() {
       </Section>
 
       <Section id="injectable" title="How to use injectable naloxone">
-        <ol className="list-decimal pl-5 space-y-2">
+        <ol className="list-decimal ps-5 space-y-2">
           <li>Remove the cap from the syringe.</li>
           <li>Inject into the upper outer thigh muscle (through clothes if needed).</li>
           <li>Press the plunger fully.</li>

@@ -8,6 +8,7 @@ import {
   type LocationType,
   type VerificationLevel,
 } from "@shared/schema";
+import { useT } from "@/lib/i18n";
 
 export interface Filters {
   type: LocationType[];
@@ -41,44 +42,12 @@ export function activeFilterCount(f: Filters): number {
   );
 }
 
-const TYPE_LABELS: Record<LocationType, string> = {
-  nsp: "NSP",
-  pharmacy: "Pharmacy",
-  hospital: "Hospital",
-  community_health: "Community health",
-  aod_organisation: "AOD",
-  library: "Library",
-  public_building: "Public building",
-  festival_site: "Festival",
-  drop_in_centre: "Drop-in",
-  other: "Other",
-};
-
-const VERIFICATION_LABELS: Record<VerificationLevel, string> = {
-  unverified: "Unverified",
-  community_verified: "Community verified",
-  official: "Official partner",
-};
-
-const TAG_LABELS: Record<LocationTag, string> = {
-  wheelchair_accessible: "Wheelchair accessible",
-  no_id_required: "No ID required",
-  bulk_available: "Bulk available",
-  open_24_7: "Open 24/7",
-  confidential: "Confidential",
-  peer_support: "Peer support",
-  emergency_available: "Emergency available",
-};
-
-const HEADLINE_BARRIERS: { barrier: BarrierValue; label: string }[] = [
-  { barrier: "id_required", label: "Hide places where ID was asked recently" },
-  {
-    barrier: "medicare_required",
-    label: "Hide places where Medicare was required recently",
-  },
-  { barrier: "cost_involved", label: "Hide places that charged recently" },
-  { barrier: "staff_rude", label: "Hide places where staff were rude recently" },
-  { barrier: "long_wait", label: "Hide places that took long recently" },
+const HEADLINE_BARRIER_KEYS: BarrierValue[] = [
+  "id_required",
+  "medicare_required",
+  "cost_involved",
+  "staff_rude",
+  "long_wait",
 ];
 
 interface FilterSheetProps {
@@ -89,6 +58,7 @@ interface FilterSheetProps {
 }
 
 export function FilterSheet({ value, onChange, onClose, onReset }: FilterSheetProps) {
+  const t = useT();
   const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -130,11 +100,11 @@ export function FilterSheet({ value, onChange, onClose, onReset }: FilterSheetPr
         <header className="flex items-start justify-between gap-3">
           <div className="flex items-baseline gap-2">
             <h2 id="filter-title" className="text-lg font-semibold">
-              Filters
+              {t("filter.title")}
             </h2>
             {count > 0 ? (
               <span className="rounded-full bg-surface-inset px-2 py-0.5 text-xs text-fg-secondary">
-                {count} active
+                {t("filter.count_active").replace("{count}", String(count))}
               </span>
             ) : null}
           </div>
@@ -145,24 +115,24 @@ export function FilterSheet({ value, onChange, onClose, onReset }: FilterSheetPr
               className="text-fg-muted hover:underline focus:outline-none focus:underline disabled:opacity-50"
               disabled={count === 0}
             >
-              Reset
+              {t("filter.reset")}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="text-fg-muted hover:underline focus:outline-none focus:underline"
             >
-              Close
+              {t("actions.close")}
             </button>
           </div>
         </header>
 
         <Section
-          title="Avoid known soft barriers"
-          subtitle="Hide places that recent visitors frequently flagged"
+          title={t("filter.headline_title")}
+          subtitle={t("filter.headline_subtitle")}
         >
           <ul className="space-y-1">
-            {HEADLINE_BARRIERS.map(({ barrier, label }) => (
+            {HEADLINE_BARRIER_KEYS.map((barrier) => (
               <li key={barrier}>
                 <label className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-nl-hover cursor-pointer">
                   <input
@@ -171,28 +141,28 @@ export function FilterSheet({ value, onChange, onClose, onReset }: FilterSheetPr
                     onChange={() => togglesetItem("hideBarriers", barrier)}
                     className="h-4 w-4 rounded border-nl-border-input text-nl-primary focus:ring-nl-primary"
                   />
-                  <span className="text-sm">{label}</span>
+                  <span className="text-sm">{t(`filter.barrier_${barrier}`)}</span>
                 </label>
               </li>
             ))}
           </ul>
         </Section>
 
-        <Section title="Location type">
+        <Section title={t("filter.location_type")}>
           <div className="flex flex-wrap gap-2">
-            {LOCATION_TYPES.map((t) => (
+            {LOCATION_TYPES.map((lt) => (
               <Chip
-                key={t}
-                active={value.type.includes(t)}
-                onClick={() => togglesetItem("type", t)}
+                key={lt}
+                active={value.type.includes(lt)}
+                onClick={() => togglesetItem("type", lt)}
               >
-                {TYPE_LABELS[t]}
+                {t(`filter.type_${lt}`)}
               </Chip>
             ))}
           </div>
         </Section>
 
-        <Section title="Verification">
+        <Section title={t("filter.verification")}>
           <div className="flex flex-wrap gap-2">
             {VERIFICATION_LEVELS.map((v) => (
               <Chip
@@ -200,21 +170,21 @@ export function FilterSheet({ value, onChange, onClose, onReset }: FilterSheetPr
                 active={value.verification.includes(v)}
                 onClick={() => togglesetItem("verification", v)}
               >
-                {VERIFICATION_LABELS[v]}
+                {t(`filter.verification_${v}`)}
               </Chip>
             ))}
           </div>
         </Section>
 
-        <Section title="Naloxone form">
+        <Section title={t("filter.naloxone_form")}>
           <div className="grid grid-cols-3 gap-2">
             {(
               [
-                ["any", "Any"],
-                ["nasal_spray", "Nasal spray"],
-                ["injectable", "Injectable"],
+                ["any", "filter.naloxone_any"],
+                ["nasal_spray", "filter.naloxone_nasal"],
+                ["injectable", "filter.naloxone_injectable"],
               ] as const
-            ).map(([v, label]) => (
+            ).map(([v, key]) => (
               <button
                 key={v}
                 type="button"
@@ -226,36 +196,36 @@ export function FilterSheet({ value, onChange, onClose, onReset }: FilterSheetPr
                     : "border-nl-border-input bg-surface text-fg-secondary hover:bg-nl-hover"
                 }`}
               >
-                {label}
+                {t(key)}
               </button>
             ))}
           </div>
         </Section>
 
-        <Section title="Status">
+        <Section title={t("filter.status")}>
           <div className="space-y-1">
             <Toggle
               checked={value.recent}
               onChange={(b) => onChange({ ...value, recent: b })}
-              label="Only recently reported (last 7 days)"
+              label={t("filter.recent_only")}
             />
             <Toggle
               checked={value.openNow}
               onChange={(b) => onChange({ ...value, openNow: b })}
-              label="Open now"
+              label={t("filter.open_now")}
             />
           </div>
         </Section>
 
-        <Section title="Accessibility">
+        <Section title={t("filter.accessibility")}>
           <div className="flex flex-wrap gap-2">
-            {LOCATION_TAGS.map((t) => (
+            {LOCATION_TAGS.map((tag) => (
               <Chip
-                key={t}
-                active={value.tags.includes(t)}
-                onClick={() => togglesetItem("tags", t)}
+                key={tag}
+                active={value.tags.includes(tag)}
+                onClick={() => togglesetItem("tags", tag)}
               >
-                {TAG_LABELS[t]}
+                {t(`filter.tag_${tag}`)}
               </Chip>
             ))}
           </div>
@@ -266,7 +236,7 @@ export function FilterSheet({ value, onChange, onClose, onReset }: FilterSheetPr
           onClick={onClose}
           className="w-full rounded-xl bg-nl-primary px-3 py-3 text-sm font-medium text-nl-on-primary hover:bg-nl-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
         >
-          Done
+          {t("filter.done")}
         </button>
       </div>
     </aside>
@@ -338,7 +308,7 @@ function Toggle({
         }`}
       >
         <span
-          className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+          className={`absolute top-0.5 start-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
             checked ? "translate-x-5" : "translate-x-0"
           }`}
           aria-hidden="true"

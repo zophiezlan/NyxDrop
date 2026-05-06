@@ -17,7 +17,7 @@ export function ModeToggle({ mode, onChange, hidden }: ModeToggleProps) {
   const t = useT();
   if (hidden) return null;
   return (
-    <div className="fixed top-3 left-3 z-30 inline-flex rounded-full bg-surface shadow-lg ring-1 ring-nl-ring p-0.5">
+    <div className="fixed top-3 start-3 z-30 inline-flex rounded-full bg-surface shadow-lg ring-1 ring-nl-ring p-0.5">
       <button
         type="button"
         onClick={() => onChange("plan")}

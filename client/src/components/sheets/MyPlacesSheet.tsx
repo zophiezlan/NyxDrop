@@ -15,6 +15,7 @@ import {
   type WatchRow,
 } from "@/hooks/use-watches";
 import { haversineDistance } from "@shared/consensus";
+import { useT } from "@/lib/i18n";
 
 type Tab = "saved" | "visited" | "watching";
 
@@ -39,14 +40,15 @@ interface VisitRow {
   };
 }
 
-const REPORT_VERDICT: Record<VisitRow["reportType"], string> = {
-  success: "Got it, no issues",
-  success_but: "Got it, with issues",
-  out_of_stock: "Out of stock",
-  denied: "Turned away",
+const REPORT_VERDICT_KEYS: Record<VisitRow["reportType"], string> = {
+  success: "report_verdict.success",
+  success_but: "report_verdict.success_but",
+  out_of_stock: "report_verdict.out_of_stock",
+  denied: "report_verdict.denied",
 };
 
 export function MyPlacesSheet({ onClose, onOpenLocation }: MyPlacesSheetProps) {
+  const t = useT();
   const sheetRef = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<Tab>("saved");
   const geo = useGeolocation();
@@ -82,29 +84,29 @@ export function MyPlacesSheet({ onClose, onOpenLocation }: MyPlacesSheetProps) {
       <div className="px-5 pt-3 pb-8 text-fg space-y-5">
         <header className="flex items-start justify-between gap-3">
           <h2 id="my-places-title" className="text-lg font-semibold">
-            My Places
+            {t("my_places.title")}
           </h2>
           <button
             type="button"
             className="rounded-md text-sm text-fg-muted hover:text-fg focus:outline-none focus:underline"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("actions.close")}
           >
-            Close
+            {t("actions.close")}
           </button>
         </header>
 
         <div role="tablist" className="flex gap-1 text-sm">
           {(
             [
-              ["saved", `Saved${saved.data ? ` (${saved.data.length})` : ""}`],
+              ["saved", `${t("my_places.tab_saved")}${saved.data ? ` (${saved.data.length})` : ""}`],
               [
                 "visited",
-                `Visited${visits.data ? ` (${visits.data.length})` : ""}`,
+                `${t("my_places.tab_visited")}${visits.data ? ` (${visits.data.length})` : ""}`,
               ],
               [
                 "watching",
-                `Watching${watches.data ? ` (${watches.data.length})` : ""}`,
+                `${t("my_places.tab_watching")}${watches.data ? ` (${watches.data.length})` : ""}`,
               ],
             ] as const
           ).map(([id, label]) => (
@@ -171,13 +173,13 @@ function SavedTab({
   userPos?: { lat: number; lon: number };
   onOpen: (id: string) => void;
 }) {
+  const t = useT();
   const unsave = useUnsaveLocation();
-  if (isLoading) return <p className="text-sm text-fg-muted">Loading…</p>;
+  if (isLoading) return <p className="text-sm text-fg-muted">{t("my_places.loading")}</p>;
   if (rows.length === 0) {
     return (
       <p className="text-sm text-fg-muted">
-        Nothing saved yet. Tap a pin and use <strong>Save</strong> to keep a
-        place handy.
+        {t("my_places.empty_saved")}
       </p>
     );
   }
@@ -198,18 +200,18 @@ function SavedTab({
             }
             onOpen={() => onOpen(row.location.id)}
           />
-          <div className="ml-1 mt-1 flex items-center justify-between text-xs">
+          <div className="ms-1 mt-1 flex items-center justify-between text-xs">
             <span className="text-fg-muted">
-              {row.location.totalReportsCount} reports
+              {t("my_places.reports_count").replace("{count}", String(row.location.totalReportsCount))}
             </span>
             <button
               type="button"
               onClick={() => unsave.mutate(row.id)}
               disabled={unsave.isPending}
               className="text-red-700 dark:text-red-400 hover:underline focus:outline-none focus:underline"
-              aria-label={`Remove ${row.location.name} from saved`}
+              aria-label={t("my_places.remove_label").replace("{name}", row.location.name)}
             >
-              ✕ Remove
+              ✕ {t("my_places.remove")}
             </button>
           </div>
         </li>
@@ -233,12 +235,12 @@ function VisitedTab({
   userPos?: { lat: number; lon: number };
   onOpen: (id: string) => void;
 }) {
-  if (isLoading) return <p className="text-sm text-fg-muted">Loading…</p>;
+  const t = useT();
+  if (isLoading) return <p className="text-sm text-fg-muted">{t("my_places.loading")}</p>;
   if (rows.length === 0) {
     return (
       <p className="text-sm text-fg-muted">
-        No visits yet. Submit a report from a pin&rsquo;s detail sheet to log a
-        visit here.
+        {t("my_places.empty_visited")}
       </p>
     );
   }
@@ -249,7 +251,7 @@ function VisitedTab({
           <RowButton
             name={row.location.name}
             address={row.location.address}
-            metaLeft={`Last reported ${relativeTime(row.submittedAt)} — ${REPORT_VERDICT[row.reportType]}`}
+            metaLeft={`Last reported ${relativeTime(row.submittedAt)} — ${t(REPORT_VERDICT_KEYS[row.reportType] as Parameters<typeof t>[0])}`}
             distance={
               userPos &&
               haversineDistance(userPos, {
@@ -280,13 +282,13 @@ function WatchingTab({
   userPos?: { lat: number; lon: number };
   onOpen: (id: string) => void;
 }) {
+  const t = useT();
   const unwatch = useUnwatchLocation();
-  if (isLoading) return <p className="text-sm text-fg-muted">Loading…</p>;
+  if (isLoading) return <p className="text-sm text-fg-muted">{t("my_places.loading")}</p>;
   if (rows.length === 0) {
     return (
       <p className="text-sm text-fg-muted">
-        Not watching any places. Tap a pin and use <strong>Watch</strong> to
-        get a push when a location&rsquo;s status changes.
+        {t("my_places.empty_watching")}
       </p>
     );
   }
@@ -298,7 +300,7 @@ function WatchingTab({
             name={row.location.name}
             address={row.location.address}
             metaLeft={
-              row.lastAlertAt ? `Last alert ${relativeTime(row.lastAlertAt)}` : "No alerts yet"
+              row.lastAlertAt ? t("my_places.last_alert").replace("{time}", relativeTime(row.lastAlertAt)) : t("my_places.no_alerts")
             }
             distance={
               userPos &&
@@ -309,15 +311,15 @@ function WatchingTab({
             }
             onOpen={() => onOpen(row.location.id)}
           />
-          <div className="ml-1 mt-1 flex items-center justify-end text-xs">
+          <div className="ms-1 mt-1 flex items-center justify-end text-xs">
             <button
               type="button"
               onClick={() => unwatch.mutate(row.id)}
               disabled={unwatch.isPending}
               className="text-red-700 dark:text-red-400 hover:underline focus:outline-none focus:underline"
-              aria-label={`Stop watching ${row.location.name}`}
+              aria-label={t("my_places.stop_watching_label").replace("{name}", row.location.name)}
             >
-              🔕 Stop watching
+              🔕 {t("my_places.stop_watching")}
             </button>
           </div>
         </li>
@@ -347,7 +349,7 @@ function RowButton({
     <button
       type="button"
       onClick={onOpen}
-      className="block w-full text-left rounded-md px-1 py-1 hover:bg-nl-hover focus:bg-nl-hover focus:outline-none"
+      className="block w-full text-start rounded-md px-1 py-1 hover:bg-nl-hover focus:bg-nl-hover focus:outline-none"
     >
       <div className="font-medium text-sm">{name}</div>
       <div className="text-xs text-fg-muted">
@@ -362,6 +364,7 @@ function RowButton({
 }
 
 function ForgetDeviceButton({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const qc = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -380,7 +383,7 @@ function ForgetDeviceButton({ onClose }: { onClose: () => void }) {
       } else if (err.status >= 500) {
         // 5xx — same logic.
       } else {
-        setError("Could not contact the server. Try again or close the sheet.");
+        setError(t("my_places.server_error"));
         setWorking(false);
         return;
       }
@@ -400,7 +403,7 @@ function ForgetDeviceButton({ onClose }: { onClose: () => void }) {
           onClick={() => setConfirming(true)}
           className="w-full rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 px-3 py-2.5 text-sm text-red-800 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
         >
-          ⚠ Forget this device
+          {t("my_places.forget_button")}
         </button>
       </div>
     );
@@ -409,8 +412,7 @@ function ForgetDeviceButton({ onClose }: { onClose: () => void }) {
   return (
     <div className="pt-4 border-t border-nl-border space-y-3">
       <p className="text-sm text-fg">
-        This will erase your saved places, your visit history, and your device key.
-        This cannot be undone. Past reports stay anonymous in the public data.
+        {t("my_places.forget_warning")}
       </p>
       {error ? (
         <p role="alert" className="text-sm text-red-700 dark:text-red-400">
@@ -427,7 +429,7 @@ function ForgetDeviceButton({ onClose }: { onClose: () => void }) {
           disabled={working}
           className="flex-1 rounded-xl border border-nl-border-input px-3 py-2 text-sm hover:bg-nl-hover"
         >
-          Cancel
+          {t("my_places.forget_cancel")}
         </button>
         <button
           type="button"
@@ -435,7 +437,7 @@ function ForgetDeviceButton({ onClose }: { onClose: () => void }) {
           disabled={working}
           className="flex-1 rounded-xl bg-red-700 px-3 py-2 text-sm text-white hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700 disabled:opacity-50 active:scale-[0.97] transition-transform"
         >
-          {working ? "Forgetting…" : "Yes, forget"}
+          {working ? t("my_places.forgetting") : t("my_places.forget_confirm")}
         </button>
       </div>
     </div>

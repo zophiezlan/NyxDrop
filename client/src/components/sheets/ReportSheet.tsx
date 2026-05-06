@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { formatLocalYmd } from "@/lib/format";
 import { useReportSubmission, type SubmitResult } from "@/hooks/use-report";
+import { useT } from "@/lib/i18n";
 import {
   BARRIERS_FOR_REPORT_TYPE,
   type BarrierValue,
@@ -25,13 +26,13 @@ type WhenChoice = "today" | "yesterday" | "earlier_week" | "custom";
 const REPORT_OPTIONS: Array<{
   value: ReportType;
   glyph: string;
-  label: string;
-  hint?: string;
+  labelKey: string;
+  hintKey?: string;
 }> = [
-  { value: "success", glyph: "✓", label: "Got it, no problems" },
-  { value: "success_but", glyph: "△", label: "Got it, but…", hint: "ID asked, charged, made me wait, etc." },
-  { value: "out_of_stock", glyph: "·", label: "They were out of stock" },
-  { value: "denied", glyph: "✗", label: "They turned me away" },
+  { value: "success", glyph: "✓", labelKey: "report.what_success" },
+  { value: "success_but", glyph: "△", labelKey: "report.what_success_but", hintKey: "report.what_success_but_hint" },
+  { value: "out_of_stock", glyph: "·", labelKey: "report.what_out_of_stock" },
+  { value: "denied", glyph: "✗", labelKey: "report.what_denied" },
 ];
 
 const BARRIER_LABEL: Record<BarrierValue, string> = {
@@ -55,6 +56,7 @@ export function ReportSheet({
   onSubmitted,
   onQueued,
 }: ReportSheetProps) {
+  const t = useT();
   const sheetRef = useRef<HTMLDivElement>(null);
   const { submit, isSubmitting } = useReportSubmission();
 
@@ -131,7 +133,7 @@ export function ReportSheet({
       onQueued(result.reason);
       onClose();
     } else if (result.kind === "rate_limited") {
-      setServerError("You already reported this place today. Try again tomorrow.");
+      setServerError(t("report.rate_limited"));
     } else {
       const msgs = Object.values(result.fields).flat();
       setServerError(msgs[0] ?? "Could not submit. Please check the form.");
@@ -162,7 +164,7 @@ export function ReportSheet({
         <header className="flex items-start justify-between gap-3">
           <div>
             <h2 id="report-title" className="text-lg font-semibold leading-tight">
-              {preselectedLocationId ? "Tell us how it went" : "Report a visit"}
+              {preselectedLocationId ? t("report.title_with_place") : t("report.title_without_place")}
             </h2>
             {locationName ? (
               <p className="mt-0.5 text-sm text-fg-muted">{locationName}</p>
@@ -172,9 +174,9 @@ export function ReportSheet({
             type="button"
             className="rounded-md text-sm text-fg-muted hover:text-fg focus:outline-none focus:underline"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("actions.close")}
           >
-            Close
+            {t("actions.close")}
           </button>
         </header>
 
@@ -237,7 +239,7 @@ export function ReportSheet({
               onClick={handleSubmit}
               className="w-full rounded-xl bg-nl-primary px-3 py-3 text-sm font-medium text-nl-on-primary hover:bg-nl-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary active:scale-[0.97] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? "Submitting…" : "Submit anonymously"}
+              {isSubmitting ? t("report.submitting") : t("report.submit")}
             </button>
           </div>
         ) : null}
@@ -255,6 +257,7 @@ function WhereStep({
 }: {
   onPick: (id: string, name: string) => void;
 }) {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<LocationWithConsensus[]>([]);
   const [searching, setSearching] = useState(false);
@@ -268,7 +271,7 @@ function WhereStep({
     }
     let cancelled = false;
     setSearching(true);
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         const data = await api<LocationWithConsensus[]>("/api/locations/search", {
           query: { q, limit: 20 },
@@ -282,7 +285,7 @@ function WhereStep({
     }, 200);
     return () => {
       cancelled = true;
-      clearTimeout(t);
+      clearTimeout(timer);
     };
   }, [query]);
 
@@ -295,17 +298,16 @@ function WhereStep({
       />
     );
   }
-
   return (
     <section aria-labelledby="step-where" className="space-y-2">
       <h3 id="step-where" className="text-xs uppercase tracking-wide text-fg-muted">
-        Where did you go?
+        {t("report.where")}
       </h3>
       <input
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search by name or address"
+        placeholder={t("search.placeholder")}
         className="w-full rounded-xl border border-nl-border-input px-3 py-2.5 text-sm focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
         autoFocus
       />
@@ -314,7 +316,7 @@ function WhereStep({
           <li key={loc.id}>
             <button
               type="button"
-              className="w-full text-left py-2 hover:bg-nl-hover focus:bg-nl-hover focus:outline-none rounded-md px-2"
+              className="w-full text-start py-2 hover:bg-nl-hover focus:bg-nl-hover focus:outline-none rounded-md px-2"
               onClick={() => onPick(loc.id, loc.name)}
             >
               <div className="text-sm font-medium">{loc.name}</div>
@@ -534,18 +536,19 @@ function WhenStep({
     d.setDate(d.getDate() - 90);
     return formatLocalYmd(d);
   })();
+  const t = useT();
   return (
     <section aria-labelledby="step-when" className="space-y-2">
       <h3 id="step-when" className="text-xs uppercase tracking-wide text-fg-muted">
-        When did you visit?
+        {t("report.when")}
       </h3>
       <div className="grid grid-cols-2 gap-2">
         {([
-          ["today", "Today"],
-          ["yesterday", "Yesterday"],
-          ["earlier_week", "Earlier this week"],
-          ["custom", "Earlier"],
-        ] as const).map(([v, label]) => (
+          ["today", "report.when_today"],
+          ["yesterday", "report.when_yesterday"],
+          ["earlier_week", "report.when_earlier_week"],
+          ["custom", "report.when_earlier"],
+        ] as const).map(([v, key]) => (
           <button
             key={v}
             type="button"
@@ -557,7 +560,7 @@ function WhenStep({
             }`}
             aria-pressed={value === v}
           >
-            {label}
+            {t(key)}
           </button>
         ))}
       </div>
@@ -587,10 +590,11 @@ function WhatStep({
   value: ReportType | null;
   onChange: (v: ReportType) => void;
 }) {
+  const t = useT();
   return (
     <section aria-labelledby="step-what" className="space-y-2">
       <h3 id="step-what" className="text-xs uppercase tracking-wide text-fg-muted">
-        What happened?
+        {t("report.what")}
       </h3>
       <div className="grid grid-cols-1 gap-2">
         {REPORT_OPTIONS.map((opt) => (
@@ -598,7 +602,7 @@ function WhatStep({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left text-sm ${
+            className={`flex items-start gap-3 rounded-xl border px-3 py-2.5 text-start text-sm ${
               value === opt.value
                 ? "border-nl-primary bg-nl-primary text-nl-on-primary"
                 : "border-nl-border-input bg-surface text-fg hover:bg-nl-hover"
@@ -609,15 +613,14 @@ function WhatStep({
               {opt.glyph}
             </span>
             <span>
-              <span className="block">{opt.label}</span>
-              {opt.hint ? (
+              <span className="block">{t(opt.labelKey as Parameters<typeof t>[0])}</span>
+              {opt.hintKey ? (
                 <span
                   className={`block text-xs mt-0.5 ${
                     value === opt.value ? "text-nl-on-primary/60" : "text-fg-muted"
                   }`}
                 >
-                  {opt.hint}
-                </span>
+                  {t(opt.hintKey as Parameters<typeof t>[0])}</span>
               ) : null}
             </span>
           </button>
@@ -648,11 +651,12 @@ function BarriersStep({
   onToggle: (b: BarrierValue) => void;
   reportType: ReportType;
 }) {
+  const t = useT();
   const visible = (Object.keys(BARRIER_LABEL) as BarrierValue[]).filter((b) =>
     allowed.has(b),
   );
   const heading =
-    reportType === "out_of_stock" ? "Anything to flag? (optional)" : "Which barriers came up?";
+    reportType === "out_of_stock" ? t("report.barriers_optional") : t("report.barriers");
   return (
     <section aria-labelledby="step-barriers" className="space-y-2">
       <h3 id="step-barriers" className="text-xs uppercase tracking-wide text-fg-muted">
@@ -674,7 +678,7 @@ function BarriersStep({
                 <span className="text-sm">{BARRIER_LABEL[b]}</span>
               </label>
               {b === "cost_involved" && checked ? (
-                <div className="ml-6 mt-1">
+                <div className="ms-6 mt-1">
                   <label className="block text-xs text-fg-muted mb-1">
                     How much (AUD)? optional
                   </label>
@@ -709,20 +713,21 @@ function NotesStep({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const t = useT();
   return (
     <section aria-labelledby="step-notes" className="space-y-2">
       <h3 id="step-notes" className="text-xs uppercase tracking-wide text-fg-muted">
-        Anything else? (optional)
+        {t("report.notes_label")}
       </h3>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         maxLength={500}
         rows={3}
-        placeholder="Tip, time of day, who to ask for, anything to say to the next person…"
+        placeholder={t("report.notes_placeholder")}
         className="w-full rounded-xl border border-nl-border-input px-3 py-2 text-sm focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary resize-none"
       />
-      <p className="text-xs text-fg-faint text-right">{value.length} / 500</p>
+      <p className="text-xs text-fg-faint text-end">{value.length} / 500</p>
     </section>
   );
 }

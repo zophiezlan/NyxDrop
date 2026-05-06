@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useMap, useMapEvents } from "react-leaflet";
+import { useT } from "@/lib/i18n";
 
 interface SearchThisAreaButtonProps {
   onTrigger: (bbox: { swLat: number; swLon: number; neLat: number; neLon: number }) => void;
@@ -12,6 +13,7 @@ interface SearchThisAreaButtonProps {
  * differs from the initial fit.
  */
 export function SearchThisAreaButton({ onTrigger }: SearchThisAreaButtonProps) {
+  const t = useT();
   const map = useMap();
   const [show, setShow] = useState(false);
   const initialCentreRef = useRef<{ lat: number; lng: number } | null>(null);
@@ -55,7 +57,7 @@ export function SearchThisAreaButton({ onTrigger }: SearchThisAreaButtonProps) {
           onClick={handleClick}
           className="rounded-full bg-surface px-4 py-2 text-sm font-medium text-fg shadow-lg ring-1 ring-nl-ring hover:bg-nl-hover active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
         >
-          🔍 Search this area
+          🔍 {t("search.this_area")}
         </button>
       </div>
     </div>

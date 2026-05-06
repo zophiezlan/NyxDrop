@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useLocation as useLocationDetail } from "@/hooks/use-locations";
 import { formatAud, formatDistanceKm, relativeTime } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import {
   useSaveLocation,
   useSavedPlaces,
@@ -61,6 +62,7 @@ export function DetailSheet({
   onClose,
   onReport,
 }: DetailSheetProps) {
+  const t = useT();
   const detailQuery = useLocationDetail(locationId, geo);
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -106,7 +108,7 @@ export function DetailSheet({
             className="text-sm text-fg-muted hover:text-fg focus:outline-none focus:underline"
             onClick={onClose}
           >
-            Close
+            {t("actions.close")}
           </button>
         </div>
       </div>
@@ -126,19 +128,19 @@ function SheetSkeleton() {
 }
 
 function SheetError({ onClose }: { onClose: () => void }) {
+  const t = useT();
   return (
     <div className="text-sm">
-      <p className="font-medium text-fg">Could not load this place.</p>
+      <p className="font-medium text-fg">{t("detail.error_title")}</p>
       <p className="mt-1 text-fg-muted">
-        Check your connection and try again. The map&rsquo;s last-loaded pins
-        should still be visible behind this sheet.
+        {t("detail.error_body")}
       </p>
       <button
         type="button"
         className="mt-4 rounded-xl border border-nl-border-input px-3 py-1.5 text-xs hover:bg-nl-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary"
         onClick={onClose}
       >
-        Dismiss
+        {t("actions.dismiss")}
       </button>
     </div>
   );
@@ -151,6 +153,7 @@ function SheetBody({
   location: LocationWithConsensus;
   onReport: () => void;
 }) {
+  const t = useT();
   const status = STATUS_DOT[location.pinStatus];
   return (
     <>
@@ -161,7 +164,7 @@ function SheetBody({
         <p className="mt-0.5 text-sm text-fg-muted">{location.address}</p>
         {location.distance !== undefined ? (
           <p className="mt-0.5 text-xs text-fg-muted">
-            {formatDistanceKm(location.distance)} away
+            {formatDistanceKm(location.distance)} {t("detail.away")}
           </p>
         ) : null}
 
@@ -182,17 +185,17 @@ function SheetBody({
                 {"★".repeat(Math.max(0, 5 - location.reliabilityStars))}
               </span>
               <span className="text-fg-muted">
-                ({location.totalReportsCount} reports)
+                {t("detail.reports_count").replace("{count}", String(location.totalReportsCount))}
               </span>
             </span>
           ) : null}
           {location.verificationLevel === "official" ? (
             <span className="rounded-full bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 px-2 py-0.5 text-xs text-blue-700 dark:text-blue-300">
-              Official partner
+              {t("detail.official_partner")}
             </span>
           ) : location.verificationLevel === "community_verified" ? (
             <span className="rounded-full bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-300">
-              Community verified
+              {t("detail.community_verified")}
             </span>
           ) : null}
         </div>
@@ -209,10 +212,11 @@ function SheetBody({
 }
 
 function SheetBodyNow({ location }: { location: LocationWithConsensus }) {
+  const t = useT();
   const status = STATUS_DOT[location.pinStatus];
   const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
   const formList = location.naloxoneForms.map((f) =>
-    f === "nasal_spray" ? "Nasal spray" : "Injectable",
+    f === "nasal_spray" ? t("detail.nasal_spray") : t("detail.injectable"),
   );
   return (
     <>
@@ -221,7 +225,7 @@ function SheetBodyNow({ location }: { location: LocationWithConsensus }) {
           {location.name}
         </h2>
         <p className="mt-1 text-sm text-fg-secondary">
-          {location.distance !== undefined ? `${formatDistanceKm(location.distance)} away` : null}
+          {location.distance !== undefined ? `${formatDistanceKm(location.distance)} ${t("detail.away")}` : null}
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span
@@ -242,18 +246,18 @@ function SheetBodyNow({ location }: { location: LocationWithConsensus }) {
           rel="noreferrer"
           className="rounded-xl bg-nl-primary px-3 py-3 text-center text-nl-on-primary hover:bg-nl-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
         >
-          ↗ Directions
+          ↗ {t("actions.directions")}
         </a>
         {location.phone ? (
           <a
             href={`tel:${location.phone}`}
             className="rounded-xl border border-nl-border-input px-3 py-3 text-center text-fg hover:bg-nl-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
           >
-            📞 Call this place
+            📞 {t("actions.call_this_place")}
           </a>
         ) : (
           <span className="rounded-xl border border-nl-border px-3 py-3 text-center text-fg-faint">
-            No phone listed
+            {t("detail.no_phone")}
           </span>
         )}
       </div>
@@ -262,6 +266,7 @@ function SheetBodyNow({ location }: { location: LocationWithConsensus }) {
 }
 
 function RegistryFact({ location }: { location: LocationWithConsensus }) {
+  const t = useT();
   const onThn = location.thnObjectId != null;
   const onNswNsp = location.nswNspListing != null;
   const onVicNsp = location.vicNspListing != null;
@@ -270,12 +275,10 @@ function RegistryFact({ location }: { location: LocationWithConsensus }) {
   const vicListingLabel = location.vicNspListing
     ? location.vicNspListing.replace(/_/g, " ")
     : "";
-  const closingNote =
-    "Whether stock is available today is a separate question — see the visitor reports below.";
   return (
     <section
       className="mt-4 rounded-xl border border-nl-border bg-surface-inset p-3 text-xs text-fg-secondary space-y-2"
-      aria-label="Registry information"
+      aria-label={t("detail.registry_label")}
     >
       {onThn ? (
         <p>
@@ -323,7 +326,7 @@ function RegistryFact({ location }: { location: LocationWithConsensus }) {
             : "."}
         </p>
       ) : null}
-      <p className="text-fg-muted">{closingNote}</p>
+      <p className="text-fg-muted">{t("detail.registry_note")}</p>
     </section>
   );
 }
@@ -333,6 +336,7 @@ function GuardianNotes({
 }: {
   notes: LocationWithConsensus["guardianNotes"];
 }) {
+  const t = useT();
   if (notes.length === 0) return null;
   return (
     <section className="mt-5 space-y-3">
@@ -345,7 +349,7 @@ function GuardianNotes({
             <span aria-hidden="true">💬</span>
             <span className="font-medium">{note.guardianFirstName}</span>
             <span className="text-blue-700/80 dark:text-blue-400/80">
-              (verified guardian, {note.guardianOrganisation})
+              {t("detail.guardian_badge").replace("{org}", note.guardianOrganisation)}
             </span>
           </div>
           <p className="mt-1 text-blue-900 dark:text-blue-200">{note.noteText}</p>
@@ -359,17 +363,18 @@ function GuardianNotes({
 }
 
 function Facts({ location }: { location: LocationWithConsensus }) {
+  const t = useT();
   const formList: string[] = location.naloxoneForms.map((f) =>
-    f === "nasal_spray" ? "Nasal spray" : "Injectable",
+    f === "nasal_spray" ? t("detail.nasal_spray") : t("detail.injectable"),
   );
   return (
     <section className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
       {location.hours ? (
-        <FactRow label="Hours" value={location.hours} />
+        <FactRow label={t("detail.hours")} value={location.hours} />
       ) : null}
       {location.phone ? (
         <FactRow
-          label="Phone"
+          label={t("detail.phone")}
           value={
             <a className="text-blue-700 dark:text-blue-400 hover:underline" href={`tel:${location.phone}`}>
               {location.phone}
@@ -379,7 +384,7 @@ function Facts({ location }: { location: LocationWithConsensus }) {
       ) : null}
       {location.website ? (
         <FactRow
-          label="Website"
+          label={t("detail.website")}
           value={
             <a
               className="text-blue-700 dark:text-blue-400 hover:underline"
@@ -392,10 +397,10 @@ function Facts({ location }: { location: LocationWithConsensus }) {
           }
         />
       ) : null}
-      <FactRow label="Naloxone form" value={formList.join(" + ")} />
+      <FactRow label={t("detail.naloxone_form")} value={formList.join(" + ")} />
       {location.tags.length > 0 ? (
         <FactRow
-          label="Tags"
+          label={t("detail.tags")}
           value={
             <div className="flex flex-wrap gap-1">
               {location.tags.map((t) => (
@@ -411,7 +416,7 @@ function Facts({ location }: { location: LocationWithConsensus }) {
         />
       ) : null}
       {location.accessNotes ? (
-        <FactRow label="Access notes" value={location.accessNotes} />
+        <FactRow label={t("detail.access_notes")} value={location.accessNotes} />
       ) : null}
     </section>
   );
@@ -429,11 +434,12 @@ function FactRow({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 function BarrierFactsList({ facts }: { facts: BarrierFact[] }) {
+  const t = useT();
   if (facts.length === 0) return null;
   return (
     <section className="mt-5">
       <h3 className="text-xs uppercase tracking-wide text-fg-muted">
-        From recent reports
+        {t("detail.from_recent_reports")}
       </h3>
       <ul className="mt-2 space-y-1 text-sm">
         {facts.map((f) => {
@@ -463,20 +469,21 @@ function RecentReports({
   reports: Report[];
   total: number;
 }) {
+  const t = useT();
   if (reports.length === 0) {
     return (
       <section className="mt-5">
         <h3 className="text-xs uppercase tracking-wide text-fg-muted">
-          Recent reports
+          {t("detail.recent_reports")}
         </h3>
-        <p className="mt-2 text-sm text-fg-muted">No reports yet.</p>
+        <p className="mt-2 text-sm text-fg-muted">{t("detail.no_reports")}</p>
       </section>
     );
   }
   return (
     <section className="mt-5">
       <h3 className="text-xs uppercase tracking-wide text-fg-muted">
-        Recent reports
+        {t("detail.recent_reports")}
       </h3>
       <ul className="mt-2 space-y-1 text-sm">
         {reports.slice(0, 5).map((r) => (
@@ -492,7 +499,7 @@ function RecentReports({
         ))}
       </ul>
       {total > 5 ? (
-        <p className="mt-2 text-xs text-fg-muted">+ {total - 5} more</p>
+        <p className="mt-2 text-xs text-fg-muted">{t("detail.more_reports").replace("{count}", String(total - 5))}</p>
       ) : null}
     </section>
   );
@@ -505,6 +512,7 @@ function Actions({
   location: LocationWithConsensus;
   onReport: () => void;
 }) {
+  const t = useT();
   const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
   const saved = useSavedPlaces();
   const watches = useWatches();
@@ -552,37 +560,37 @@ function Actions({
           type="button"
           onClick={onReport}
           className="rounded-xl border border-nl-border-input px-3 py-2 text-fg hover:bg-nl-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
-          aria-label="Report a visit to this place"
+          aria-label={t("detail.report_visit_label")}
         >
-          ⊕ I went here
+          ⊕ {t("actions.i_went_here")}
         </button>
         <button
           type="button"
           onClick={handleSaveToggle}
           disabled={save.isPending || unsave.isPending}
           aria-pressed={!!savedRow}
-          aria-label={savedRow ? `Unsave ${location.name}` : `Save ${location.name}`}
+          aria-label={savedRow ? `Unsave ${location.name}` : `${t("actions.save")} ${location.name}`}
           className={`rounded-xl border px-3 py-2 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform ${
             savedRow
               ? "bg-nl-primary text-nl-on-primary border-nl-primary"
               : "border-nl-border-input text-fg hover:bg-nl-hover"
           }`}
         >
-          {savedRow ? "🔖 Saved" : "🔖 Save"}
+          {savedRow ? `🔖 ${t("actions.saved")}` : `🔖 ${t("actions.save")}`}
         </button>
         <button
           type="button"
           onClick={handleWatchToggle}
           disabled={watch.isPending || unwatch.isPending}
           aria-pressed={!!watchRow}
-          aria-label={watchRow ? `Stop watching ${location.name}` : `Watch ${location.name}`}
+          aria-label={watchRow ? `${t("my_places.stop_watching")} ${location.name}` : `${t("actions.watch")} ${location.name}`}
           className={`rounded-xl border px-3 py-2 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform ${
             watchRow
               ? "bg-nl-primary text-nl-on-primary border-nl-primary"
               : "border-nl-border-input text-fg hover:bg-nl-hover"
           }`}
         >
-          {watchRow ? "🔔 Watching" : "🔔 Watch"}
+          {watchRow ? `🔔 ${t("actions.watching")}` : `🔔 ${t("actions.watch")}`}
         </button>
       </div>
       <a
@@ -591,7 +599,7 @@ function Actions({
         rel="noreferrer"
         className="block w-full rounded-xl bg-nl-primary px-3 py-3 text-center text-sm text-nl-on-primary hover:bg-nl-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
       >
-        ↗ Directions
+        ↗ {t("actions.directions")}
       </a>
     </section>
   );

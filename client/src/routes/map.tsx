@@ -390,9 +390,10 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
 }
 
 function MapPlaceholder() {
+  const t = useT();
   return (
     <div className="flex h-dvh w-dvw items-center justify-center bg-surface-inset text-sm text-fg-muted">
-      Loading the map…
+      {t("map.loading")}
     </div>
   );
 }
@@ -406,46 +407,31 @@ function HiddenByBarrierChip({
   barriers: string[];
   onClear: () => void;
 }) {
-  // The first selected barrier drives the chip text; if multiple barriers
-  // are active, fall back to a count-only phrasing.
+  const t = useT();
   const phrase =
     barriers.length === 1
-      ? phraseForBarrier(barriers[0]!)
-      : `${barriers.length} soft barrier filters active`;
+      ? (t(`barrier.${barriers[0]!}` as Parameters<typeof t>[0]) || barriers[0]!.replace(/_/g, " "))
+      : t("map.barrier_chip_multi").replace("{count}", String(barriers.length));
+  const places = count === 1 ? t("map.barrier_chip_place") : t("map.barrier_chip_places");
+  const chipText = t("map.barrier_chip_hiding")
+    .replace("{count}", String(count))
+    .replace("{places}", places)
+    .replace("{phrase}", phrase);
   return (
     <div className="fixed inset-x-3 top-3 z-30 flex items-center justify-center pointer-events-none">
       <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-blue-50 dark:bg-blue-950 px-3 py-1.5 text-xs text-blue-900 dark:text-blue-200 shadow-md ring-1 ring-blue-200 dark:ring-blue-800">
-        <span>
-          Hiding {count} {count === 1 ? "place" : "places"} — {phrase}
-        </span>
+        <span>{chipText}</span>
         <button
           type="button"
           onClick={onClear}
-          aria-label="Clear barrier filters"
-          className="ml-1 rounded-full px-1 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 focus:outline-none focus:ring-1 focus:ring-blue-700"
+          aria-label={t("map.clear_barrier_filters")}
+          className="ms-1 rounded-full px-1 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 focus:outline-none focus:ring-1 focus:ring-blue-700"
         >
           ×
         </button>
       </div>
     </div>
   );
-}
-
-function phraseForBarrier(b: string): string {
-  switch (b) {
-    case "id_required":
-      return "ID often asked recently";
-    case "medicare_required":
-      return "Medicare often asked recently";
-    case "cost_involved":
-      return "charged recently";
-    case "staff_rude":
-      return "staff attitude flagged recently";
-    case "long_wait":
-      return "long waits recently";
-    default:
-      return b.replace(/_/g, " ");
-  }
 }
 
 function TopRightButtons({
@@ -457,14 +443,15 @@ function TopRightButtons({
   onMyPlaces: () => void;
   onSettings: () => void;
 }) {
+  const t = useT();
   if (hidden) return null;
   return (
-    <div className="fixed top-3 right-3 z-30 flex gap-2">
+    <div className="fixed top-3 end-3 z-30 flex gap-2">
       <button
         type="button"
         onClick={onSettings}
-        aria-label="Settings"
-        title="Settings"
+        aria-label={t("settings.title")}
+        title={t("settings.title")}
         className="rounded-full bg-surface shadow-lg ring-1 ring-nl-ring w-11 h-11 text-lg flex items-center justify-center hover:bg-nl-hover active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
       >
         ⚙
@@ -472,8 +459,8 @@ function TopRightButtons({
       <button
         type="button"
         onClick={onMyPlaces}
-        aria-label="My Places"
-        title="My Places"
+        aria-label={t("my_places.title")}
+        title={t("my_places.title")}
         className="rounded-full bg-surface shadow-lg ring-1 ring-nl-ring w-11 h-11 text-lg flex items-center justify-center hover:bg-nl-hover active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nl-primary transition-transform"
       >
         👤

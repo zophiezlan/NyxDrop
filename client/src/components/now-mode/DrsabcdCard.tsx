@@ -54,7 +54,7 @@ export function DrsabcdCard() {
           <li key={`${step.letter}-${i}`}>
             <button
               type="button"
-              className="flex w-full items-start gap-3 rounded-md px-1 py-1 text-left hover:bg-nl-hover focus:outline-none focus:bg-nl-hover"
+              className="flex w-full items-start gap-3 rounded-md px-1 py-1 text-start hover:bg-nl-hover focus:outline-none focus:bg-nl-hover"
               aria-expanded={open === i}
               onClick={() => setOpen(open === i ? null : i)}
             >

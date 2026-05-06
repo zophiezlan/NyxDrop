@@ -180,7 +180,7 @@ function PostNote({ guardian }: { guardian: GuardianMe["guardian"] }) {
             placeholder="Ask for me at the back counter; open till 9 PM weekdays."
             className="w-full rounded-xl border border-nl-border-input bg-surface px-3 py-2 text-sm text-fg placeholder-fg-faint focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary resize-none"
           />
-          <p className="text-xs text-fg-faint text-right">{noteText.length} / 500</p>
+          <p className="text-xs text-fg-faint text-end">{noteText.length} / 500</p>
         </label>
         {error ? (
           <p role="alert" className="text-sm text-red-700 dark:text-red-400">
