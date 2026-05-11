@@ -280,6 +280,3 @@ function groupBy<T, K>(items: T[], key: (item: T) => K): Map<K, T[]> {
   }
   return out;
 }
-
-// Re-export Report for callers that need it.
-export type { Location, Report };

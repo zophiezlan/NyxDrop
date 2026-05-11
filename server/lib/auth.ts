@@ -14,7 +14,6 @@ import type { Guardian } from "../../shared/schema.js";
 const BCRYPT_COST = 12;
 const SESSION_COOKIE = "nl_guardian_session";
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
-export const SESSION_COOKIE_NAME = SESSION_COOKIE;
 
 export function generatePlainToken(): string {
   return crypto.randomBytes(32).toString("base64url");

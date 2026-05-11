@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "client/index.html",
+    "client/public/sw.js",
+    "api/index.ts",
+    "server/scripts/generate-vapid.ts",
+    "server/scripts/seed-admin.ts"
+  ]
+}

@@ -11,7 +11,7 @@ const HOUR_MS = 60 * 60 * 1000;
  *
  * weight(t) = 0.5 ^ (ageHours / 48) for ageHours ≤ 168, else 0.
  */
-export async function runWeightDecayPass(): Promise<number> {
+async function runWeightDecayPass(): Promise<number> {
   const start = Date.now();
   const result = await db.execute(sql`
     UPDATE ${schema.reports}

@@ -45,6 +45,7 @@ export function useWatchLocation() {
   });
 }
 
+// Phase 4: unwatch button in MyPlacesSheet
 export function useUnwatchLocation() {
   const qc = useQueryClient();
   return useMutation({
@@ -54,6 +55,8 @@ export function useUnwatchLocation() {
   });
 }
 
+// Phase 4: per-alert-type toggles in MyPlacesSheet
+// fallow-ignore-next-line unused-export
 export function useUpdateWatch() {
   const qc = useQueryClient();
   return useMutation({

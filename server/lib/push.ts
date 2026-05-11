@@ -45,6 +45,7 @@ export interface PushPayload {
  * `deviceKey`. Drops 410 Gone subscriptions from the table. Returns the count
  * of deliveries that completed without error.
  */
+// Phase 4: guardian -> individual device push (not yet wired to a route)
 export async function sendPushToDevice(
   deviceKey: string,
   payload: PushPayload,
