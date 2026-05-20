@@ -1,21 +1,12 @@
 import { Suspense, lazy } from "react";
 import { Route, Switch, useLocation, useRoute } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { PERSIST_MAX_AGE, queryClient, queryPersister } from "@/lib/query-client";
 
 const MapRoute = lazy(() => import("./routes/map.js"));
 const AboutRoute = lazy(() => import("./routes/about.js"));
 const GuardianLoginRoute = lazy(() => import("./routes/guardian/login.js"));
 const GuardianDashboardRoute = lazy(() => import("./routes/guardian/dashboard.js"));
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-      staleTime: 60_000,
-    },
-  },
-});
 
 function MapLoading() {
   return (
@@ -53,7 +44,22 @@ function MapRouteHost() {
 
 export function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister: queryPersister,
+        maxAge: PERSIST_MAX_AGE,
+        // Only persist queries we actually want to survive reloads.
+        // Locations tiles get persisted; ephemeral things (pending reports,
+        // search results) are explicitly excluded.
+        dehydrateOptions: {
+          shouldDehydrateQuery: (q) => {
+            const key = q.queryKey[0];
+            return key === "locations" || key === "location";
+          },
+        },
+      }}
+    >
       <Suspense fallback={<MapLoading />}>
         <Switch>
           <Route path="/about" component={AboutRoute} />
@@ -64,6 +70,6 @@ export function App() {
           </Route>
         </Switch>
       </Suspense>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

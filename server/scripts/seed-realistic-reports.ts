@@ -437,7 +437,7 @@ async function main(): Promise<void> {
   }
   // Anything missing (e.g. SA only has 1 venue) — redistribute the slack
   // to the states that DO have headroom.
-  let allocated = [...perStateTarget.values()].reduce((s, n) => s + n, 0);
+  const allocated = [...perStateTarget.values()].reduce((s, n) => s + n, 0);
   let slack = TARGET_VENUE_COUNT - allocated;
   for (const st of presentStates) {
     if (slack <= 0) break;

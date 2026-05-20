@@ -1,7 +1,8 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation as useWouterLocation } from "wouter";
 import { useGeolocation } from "@/hooks/use-geolocation";
-import { useLocations } from "@/hooks/use-locations";
+import { useLocationsByTiles } from "@/hooks/use-locations";
+import { pickTileZoom, tileKey, tilesForBbox, type TileCoord } from "@/lib/tiles";
 import { useMode } from "@/hooks/use-mode";
 import { useOfflineReportDrain } from "@/hooks/use-report";
 import { OnboardingOverlay } from "@/components/shared/OnboardingOverlay";
@@ -54,6 +55,13 @@ interface ToastState {
 
 type Bbox = { swLat: number; swLon: number; neLat: number; neLon: number };
 
+// Hard cap on how many tiles we'll *start* fetching from a single
+// viewport change. Adaptive tile zoom keeps the typical viewport at
+// ~4-16 tiles; this just guards against pathological zoom-outs where
+// the bbox math could explode (e.g. Leaflet handing us a >360° lon
+// span when the world has wrapped multiple times).
+const MAX_TILES_PER_VIEWPORT = 32;
+
 export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProps) {
   const t = useT();
   const [, navigate] = useWouterLocation();
@@ -65,10 +73,15 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
-  // Viewport bbox driven by the map's pan/zoom. The locations query stays
-  // disabled until the map emits its first viewport so we never fire a
-  // nationwide /api/locations fetch on cold start.
+  // Viewport bbox driven by the map's pan/zoom. Used as a final
+  // client-side filter (we only render pins inside the visible window
+  // even if a parent tile covers more).
   const [viewportBbox, setViewportBbox] = useState<Bbox | null>(null);
+  // The set of tile coordinates we've ever fetched this session, keyed
+  // by `${z}/${x}/${y}`. Grows monotonically as the user explores; never
+  // shrinks. React Query handles eviction of the underlying data via
+  // `gcTime` and `staleTime`, and the persister survives reloads.
+  const [activeTiles, setActiveTiles] = useState<TileCoord[]>([]);
   const { preferences, setPreferences } = useAppPreferences();
   const qc = useQueryClient();
 
@@ -101,16 +114,21 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const locationsQuery = useLocations({
-    lat: geo.position.lat,
-    lon: geo.position.lon,
-    bbox: viewportBbox ?? undefined,
-    type: filters.type.length > 0 ? filters.type : undefined,
-    verification: filters.verification.length > 0 ? filters.verification : undefined,
-    recent: filters.recent || undefined,
-    openNow: filters.openNow || undefined,
-    enabled: viewportBbox !== null,
-  });
+  const tileFilters = useMemo(
+    () => ({
+      type: filters.type.length > 0 ? filters.type : undefined,
+      verification:
+        filters.verification.length > 0 ? filters.verification : undefined,
+      recent: filters.recent || undefined,
+      openNow: filters.openNow || undefined,
+    }),
+    [filters.type, filters.verification, filters.recent, filters.openNow],
+  );
+  const {
+    byId: loadedById,
+    isFetching: isAnyTileFetching,
+    isError: isAnyTileError,
+  } = useLocationsByTiles(activeTiles, tileFilters);
 
   // Ctrl+E (or Cmd+E on Mac) toggles Now mode from anywhere in the app.
   useEffect(() => {
@@ -144,9 +162,27 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
 
   // Compose all the client-side filters: barrier-hide (algorithms.md §4),
   // naloxone form, accessibility tags. Server already applied type, verif,
-  // recent, openNow query params.
+  // recent, openNow query params. We also clip to the current viewport
+  // here so pins outside the visible window aren't sent through the
+  // marker-cluster pipeline.
   const visibleLocations: LocationWithConsensus[] = useMemo(() => {
-    const all = locationsQuery.data ?? [];
+    const all: LocationWithConsensus[] = [];
+    for (const loc of loadedById.values()) {
+      if (!viewportBbox) {
+        all.push(loc);
+        continue;
+      }
+      const lat = Number(loc.latitude);
+      const lon = Number(loc.longitude);
+      if (
+        lat >= viewportBbox.swLat &&
+        lat <= viewportBbox.neLat &&
+        lon >= viewportBbox.swLon &&
+        lon <= viewportBbox.neLon
+      ) {
+        all.push(loc);
+      }
+    }
     let next = filterByAbsenceOfBarriers(all, filters.hideBarriers);
 
     if (filters.naloxoneForm !== "any") {
@@ -169,17 +205,32 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
       );
     }
     return next;
-  }, [mode, locationsQuery.data, filters]);
+  }, [mode, loadedById, filters, viewportBbox]);
 
   const hiddenByBarrierCount = useMemo(() => {
     if (filters.hideBarriers.length === 0) return 0;
-    const total = locationsQuery.data?.length ?? 0;
-    const after = filterByAbsenceOfBarriers(
-      locationsQuery.data ?? [],
-      filters.hideBarriers,
-    ).length;
-    return total - after;
-  }, [filters.hideBarriers, locationsQuery.data]);
+    const all = Array.from(loadedById.values());
+    const after = filterByAbsenceOfBarriers(all, filters.hideBarriers).length;
+    return all.length - after;
+  }, [filters.hideBarriers, loadedById]);
+
+  // Track which tiles cover the current viewport and add any new ones to
+  // `activeTiles`. Each tile becomes its own React Query entry — visiting
+  // a tile twice in a session is free, and (via PersistQueryClientProvider)
+  // visiting a tile on a return session is free until its `staleTime`
+  // elapses.
+  const handleViewportChange = useCallback((visible: Bbox) => {
+    setViewportBbox(visible);
+    const z = pickTileZoom(visible);
+    const needed = tilesForBbox(visible, z);
+    if (needed.length === 0 || needed.length > MAX_TILES_PER_VIEWPORT) return;
+    setActiveTiles((prev) => {
+      const seen = new Set(prev.map(tileKey));
+      const additions = needed.filter((t) => !seen.has(tileKey(t)));
+      if (additions.length === 0) return prev;
+      return [...prev, ...additions];
+    });
+  }, []);
 
   const handleSelect = useCallback(
     (id: string) => {
@@ -197,14 +248,14 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
 
   const openReportForCurrent = useCallback(() => {
     if (!selectedId) return;
-    const loc = locationsQuery.data?.find((l) => l.id === selectedId);
+    const loc = loadedById.get(selectedId);
     setReportState({
       locationId: selectedId,
       preselectedName: loc?.name,
     });
     setSelectedId(null);
     navigate(`/r/${selectedId}`);
-  }, [selectedId, locationsQuery.data, navigate]);
+  }, [selectedId, loadedById, navigate]);
 
   const openAddPlace = useCallback(() => {
     setReportState({});
@@ -239,14 +290,16 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
           selectedId={selectedId}
           onSelect={handleSelect}
           autoFitMode={mode === "now" ? "nearest-3" : "default"}
-          onViewportChange={setViewportBbox}
+          onViewportChange={handleViewportChange}
         />
       </Suspense>
 
-      {locationsQuery.isError ? <ApiBanner message={t("errors.api_unreachable")} /> : null}
+      {isAnyTileError && loadedById.size === 0 ? (
+        <ApiBanner message={t("errors.api_unreachable")} />
+      ) : null}
 
       <LoadingIndicator
-        isFetching={locationsQuery.isFetching}
+        isFetching={isAnyTileFetching}
         count={visibleLocations.length}
         hidden={
           mode === "now" ||

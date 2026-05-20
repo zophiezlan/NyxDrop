@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import { and, eq, gte, isNull, sql } from "drizzle-orm";
 import type { NextFunction, Request, Response } from "express";
