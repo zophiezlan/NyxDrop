@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { IS_DEMO } from "@/lib/demo";
 import { useT } from "@/lib/i18n";
 
 const STORAGE_KEY = "nl.onboarded";
@@ -47,10 +48,25 @@ export function OnboardingOverlay() {
       aria-labelledby="onboarding-title"
     >
       <div className="w-full max-w-sm rounded-2xl bg-surface shadow-xl p-6 text-fg">
-        <h1 id="onboarding-title" className="text-xl font-semibold">
-          {t("app.title")}
-        </h1>
-        <p className="mt-3 text-sm text-fg-secondary">
+        {IS_DEMO ? (
+          <div className="mb-4 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 px-4 py-3">
+            <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
+              <span aria-hidden="true">⚠</span>
+              <h2 id="onboarding-title" className="text-sm font-semibold">
+                {t("demo.onboarding_title")}
+              </h2>
+            </div>
+            <p className="mt-2 text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
+              {t("demo.onboarding_body")}
+            </p>
+          </div>
+        ) : (
+          <h1 id="onboarding-title" className="text-xl font-semibold">
+            {t("app.title")}
+          </h1>
+        )}
+
+        <p className="text-sm text-fg-secondary">
           {t("app.tagline")}
           <br />
           {t("app.subtitle")}
@@ -64,7 +80,7 @@ export function OnboardingOverlay() {
             setOpen(false);
           }}
         >
-          {t("onboarding.continue")}
+          {IS_DEMO ? t("demo.onboarding_ack") : t("onboarding.continue")}
         </button>
       </div>
     </div>

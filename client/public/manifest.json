@@ -1,7 +1,7 @@
 {
-  "name": "NaloxoneLocate",
+  "name": "NaloxoneLocate (Prototype)",
   "short_name": "NaloxoneLocate",
-  "description": "A community map of naloxone access in Australia. Anonymous. No accounts. Built by peers.",
+  "description": "Prototype — sample data. A community map of naloxone access in Australia (in development). Anonymous. No accounts. Built by peers.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

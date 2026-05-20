@@ -14,6 +14,7 @@ import {
 } from "@/hooks/use-watches";
 import { usePushSubscription } from "@/hooks/use-push";
 import { haversineDistance } from "@shared/consensus";
+import { DemoStrip } from "@/components/shared/DemoNotice";
 import type {
   BarrierFact,
   LocationWithConsensus,
@@ -226,6 +227,7 @@ function SheetBody({
       <RegistryFact location={location} />
       <Facts location={location} />
       <BarrierFactsList facts={location.barrierFacts} />
+      <DemoStrip messageKey="demo.detail_strip" />
       <RecentReports reports={location.recentReports} total={location.totalReportsCount} />
       <Actions location={location} onReport={onReport} />
     </>
@@ -260,6 +262,7 @@ function SheetBodyNow({ location }: { location: LocationWithConsensus }) {
           </span>
         </div>
       </header>
+      <DemoStrip messageKey="demo.now_strip" tone="red" />
       <div className="mt-5 grid grid-cols-2 gap-2 text-sm">
         <a
           href={directionsHref}

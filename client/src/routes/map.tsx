@@ -5,6 +5,7 @@ import { useLocations } from "@/hooks/use-locations";
 import { useMode } from "@/hooks/use-mode";
 import { useOfflineReportDrain } from "@/hooks/use-report";
 import { OnboardingOverlay } from "@/components/shared/OnboardingOverlay";
+import { DemoChip } from "@/components/shared/DemoNotice";
 import { BottomActionBar } from "@/components/shared/BottomActionBar";
 import { ModeToggle } from "@/components/shared/ModeToggle";
 import { Toast } from "@/components/shared/Toast";
@@ -400,6 +401,16 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
           onClear={() => setFilters({ ...filters, hideBarriers: [] })}
         />
       ) : null}
+
+      <DemoChip
+        hidden={
+          !!selectedId ||
+          !!reportState ||
+          openSheet === "my-places" ||
+          filterSheetOpen ||
+          settingsSheetOpen
+        }
+      />
 
       <OnboardingOverlay />
     </div>

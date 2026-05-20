@@ -291,5 +291,18 @@
   "errors.forget_device_failed": "Could not contact the server. Try again.",
 
   "sw.update_available": "New version available.",
-  "sw.refresh": "Refresh"
+  "sw.refresh": "Refresh",
+
+  "demo.chip": "Demo data",
+  "demo.chip_aria": "This prototype shows sample data — tap to learn more",
+  "demo.onboarding_title": "Prototype — sample data",
+  "demo.onboarding_body": "Every place, report and statistic you see here is fabricated for review and feedback. Real venue names appear so the experience feels true to life, but no visit, denial, charge or stock report on this site reflects real-world behaviour by the named organisation.",
+  "demo.onboarding_ack": "I understand — this is demo data",
+  "demo.detail_strip": "Sample reports — these visits did not happen. The named venue has not been assessed.",
+  "demo.now_strip": "Demo data — for a real overdose, call 000. Pins shown here are sample locations and may not stock naloxone today.",
+  "demo.about_title": "This is a prototype",
+  "demo.about_body": "NaloxoneLocate is in development. Everything on the live site — the venues, the visitor reports, the headline counts below — is fabricated sample data so reviewers can experience the full feature set. No row reflects a real visit, a real stock check, or a real interaction with the named venue. The data sources listed below describe where production data will come from, not where the current sample data came from.",
+  "demo.about_metrics_caveat": "These counts are from the sample dataset, not real activity.",
+  "demo.dialog_title": "About this demo",
+  "demo.dialog_close": "Close"
 }

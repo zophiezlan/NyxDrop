@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { api } from "@/lib/api";
+import { IS_DEMO } from "@/lib/demo";
 import { useT } from "@/lib/i18n";
 
 interface MetricsSummary {
@@ -29,6 +30,22 @@ export default function AboutRoute() {
         </Link>
         <h1 className="mt-3 text-2xl font-semibold">{t("about.title")}</h1>
       </header>
+
+      {IS_DEMO ? (
+        <aside
+          role="note"
+          aria-labelledby="demo-about-title"
+          className="mb-8 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 px-4 py-3 text-sm text-amber-900 dark:text-amber-200"
+        >
+          <div className="flex items-center gap-2">
+            <span aria-hidden="true">⚠</span>
+            <h2 id="demo-about-title" className="font-semibold">
+              {t("demo.about_title")}
+            </h2>
+          </div>
+          <p className="mt-2 leading-relaxed">{t("demo.about_body")}</p>
+        </aside>
+      ) : null}
 
       <Toc t={t} />
 
@@ -107,6 +124,11 @@ export default function AboutRoute() {
             {t("about.last_updated").replace("{date}", new Date(metrics.data.lastUpdated).toLocaleString("en-AU"))}
           </p>
         ) : null}
+        {IS_DEMO ? (
+          <p className="mt-2 text-xs text-amber-800 dark:text-amber-300">
+            ⚠ {t("demo.about_metrics_caveat")}
+          </p>
+        ) : null}
       </Section>
 
       <Section id="trust" title={t("about.trust_model")}>
@@ -127,7 +149,15 @@ export default function AboutRoute() {
           whether to walk in before they walk in.
         </p>
         <p className="mt-3">
-          The site list is seeded from three government sources: the{" "}
+          {IS_DEMO ? (
+            <>
+              <strong>In this prototype</strong>, the site list and every visitor
+              report are fabricated for review. The intent is that production
+              data will be seeded from three government sources: the{" "}
+            </>
+          ) : (
+            <>The site list is seeded from three government sources: the{" "}</>
+          )}
           <a
             href="https://www.health.gov.au/our-work/take-home-naloxone-program"
             target="_blank"
