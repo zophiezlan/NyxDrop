@@ -10,33 +10,43 @@ export interface LocationsQueryParams {
   verification?: string[];
   recent?: boolean;
   openNow?: boolean;
+  /** Set false to suppress fetching until upstream state is ready. */
+  enabled?: boolean;
 }
 
 export function useLocations(params: LocationsQueryParams = {}) {
+  const { enabled = true, ...rest } = params;
   return useQuery({
-    queryKey: ["locations", params],
+    queryKey: ["locations", rest],
     queryFn: ({ signal }) =>
       api<LocationWithConsensus[]>("/api/locations", {
         signal,
         query: {
-          lat: params.lat,
-          lon: params.lon,
-          bbox: params.bbox
-            ? `${params.bbox.swLat},${params.bbox.swLon},${params.bbox.neLat},${params.bbox.neLon}`
+          lat: rest.lat,
+          lon: rest.lon,
+          bbox: rest.bbox
+            ? `${rest.bbox.swLat},${rest.bbox.swLon},${rest.bbox.neLat},${rest.bbox.neLon}`
             : undefined,
-          type: params.type,
-          verification: params.verification,
-          recent: params.recent,
-          openNow: params.openNow,
+          type: rest.type,
+          verification: rest.verification,
+          recent: rest.recent,
+          openNow: rest.openNow,
         },
       }),
+    enabled,
     staleTime: 60_000,
   });
 }
 
+/**
+ * `geo` is intentionally not part of the cache key: distance is an
+ * informational field that the client recomputes from the user's current
+ * position. Including it would refetch the detail on every position update
+ * and prevent reopening a recently-viewed pin from hitting the cache.
+ */
 export function useLocation(id: string | null, geo?: { lat: number; lon: number }) {
   return useQuery({
-    queryKey: ["location", id, geo],
+    queryKey: ["location", id],
     queryFn: ({ signal }) =>
       api<LocationWithConsensus>(`/api/locations/${id}`, {
         signal,

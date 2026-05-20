@@ -3,6 +3,7 @@ import {
   boolean,
   date,
   decimal,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -189,7 +190,13 @@ export const locations = pgTable("locations", {
   lastReportAt: timestamp("last_report_at"),
 
   archivedAt: timestamp("archived_at"),
-});
+}, (t) => ({
+  // Bbox query path: WHERE archived_at IS NULL AND latitude BETWEEN … AND
+  // longitude BETWEEN …  These let Postgres index-scan a viewport instead of
+  // sequentially CASTing every row's lat/lon to double precision.
+  archivedIdx: index("locations_archived_idx").on(t.archivedAt),
+  latLonIdx: index("locations_lat_lon_idx").on(t.latitude, t.longitude),
+}));
 
 // =============================================================================
 // reports
@@ -217,7 +224,16 @@ export const reports = pgTable("reports", {
   notes: text("notes"),
 
   weight: decimal("weight", { precision: 4, scale: 3 }).notNull().default("1.000"),
-});
+}, (t) => ({
+  // Hot path: pull the last 90 days of reports for a set of locations to
+  // compute barrierFacts + pinStatus on the list endpoint. A composite
+  // (locationId, submittedAt DESC) index lets each per-location lookup hit
+  // exactly the recent slice instead of scanning the whole report history.
+  locSubmittedIdx: index("reports_location_submitted_idx").on(
+    t.locationId,
+    t.submittedAt,
+  ),
+}));
 
 // =============================================================================
 // device_reports — rate-limit ledger

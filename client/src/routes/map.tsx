@@ -64,7 +64,10 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
-  const [searchAreaBbox, setSearchAreaBbox] = useState<Bbox | null>(null);
+  // Viewport bbox driven by the map's pan/zoom. The locations query stays
+  // disabled until the map emits its first viewport so we never fire a
+  // nationwide /api/locations fetch on cold start.
+  const [viewportBbox, setViewportBbox] = useState<Bbox | null>(null);
   const { preferences, setPreferences } = useAppPreferences();
   const qc = useQueryClient();
 
@@ -100,11 +103,12 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
   const locationsQuery = useLocations({
     lat: geo.position.lat,
     lon: geo.position.lon,
-    bbox: searchAreaBbox ?? undefined,
+    bbox: viewportBbox ?? undefined,
     type: filters.type.length > 0 ? filters.type : undefined,
     verification: filters.verification.length > 0 ? filters.verification : undefined,
     recent: filters.recent || undefined,
     openNow: filters.openNow || undefined,
+    enabled: viewportBbox !== null,
   });
 
   // Ctrl+E (or Cmd+E on Mac) toggles Now mode from anywhere in the app.
@@ -234,7 +238,7 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
           selectedId={selectedId}
           onSelect={handleSelect}
           autoFitMode={mode === "now" ? "nearest-3" : "default"}
-          onSearchArea={mode === "plan" ? setSearchAreaBbox : undefined}
+          onViewportChange={setViewportBbox}
         />
       </Suspense>
 

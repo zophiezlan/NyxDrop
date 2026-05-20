@@ -13,6 +13,7 @@ import {
   useWatches,
 } from "@/hooks/use-watches";
 import { usePushSubscription } from "@/hooks/use-push";
+import { haversineDistance } from "@shared/consensus";
 import type {
   BarrierFact,
   LocationWithConsensus,
@@ -53,6 +54,23 @@ function reportLineForRow(r: Report): string {
   const base = REPORT_LABEL[r.reportType];
   if (r.barriers.length === 0) return base;
   return `${base} — ${r.barriers.join(", ").replace(/_/g, " ")}`;
+}
+
+// `geo` is no longer part of the detail cache key, so the server-computed
+// `distance` may be stale relative to the user's current position. Recompute
+// here from the cached lat/lon when we have a fix.
+function withClientDistance(
+  loc: LocationWithConsensus,
+  geo?: { lat: number; lon: number },
+): LocationWithConsensus {
+  if (!geo) return loc;
+  return {
+    ...loc,
+    distance: haversineDistance(geo, {
+      lat: Number(loc.latitude),
+      lon: Number(loc.longitude),
+    }),
+  };
 }
 
 export function DetailSheet({
@@ -97,9 +115,12 @@ export function DetailSheet({
         ) : detailQuery.isError || !detailQuery.data ? (
           <SheetError onClose={onClose} />
         ) : mode === "now" ? (
-          <SheetBodyNow location={detailQuery.data} />
+          <SheetBodyNow location={withClientDistance(detailQuery.data, geo)} />
         ) : (
-          <SheetBody location={detailQuery.data} onReport={onReport} />
+          <SheetBody
+            location={withClientDistance(detailQuery.data, geo)}
+            onReport={onReport}
+          />
         )}
 
         <div className="mt-6 flex justify-end">

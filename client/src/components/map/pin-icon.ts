@@ -32,6 +32,13 @@ interface PinOptions {
   selected?: boolean;
 }
 
+// Memo cache: DivIcons keyed by visual signature. The map can show hundreds
+// of pins and each rerender used to allocate a fresh DivIcon per marker
+// (which forces react-leaflet to setIcon on every underlying L.Marker).
+// Most pins share identical signatures (same status/size/type/verification),
+// so a small cache covers the bulk of markers with one icon each.
+const ICON_CACHE = new Map<string, L.DivIcon>();
+
 export function createPinIcon({
   status,
   size,
@@ -39,6 +46,10 @@ export function createPinIcon({
   verification,
   selected,
 }: PinOptions): L.DivIcon {
+  const key = `${status}|${size}|${type}|${verification}|${selected ? 1 : 0}`;
+  const cached = ICON_CACHE.get(key);
+  if (cached) return cached;
+
   const renderedSize = selected ? Math.round(size * 1.4) : size;
   const bg = STATUS_BG[status];
   const glyph = TYPE_GLYPH[type];
@@ -70,13 +81,15 @@ export function createPinIcon({
     >${glyph}</div>
   `;
 
-  return L.divIcon({
+  const icon = L.divIcon({
     html,
     className: "nl-pin-icon",
     iconSize: [renderedSize, renderedSize],
     iconAnchor: [renderedSize / 2, renderedSize / 2],
     popupAnchor: [0, -(renderedSize / 2)],
   });
+  ICON_CACHE.set(key, icon);
+  return icon;
 }
 
 export function createUserLocationIcon(): L.DivIcon {

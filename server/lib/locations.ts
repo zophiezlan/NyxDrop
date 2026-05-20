@@ -76,16 +76,42 @@ export async function getLocationsWithConsensus(
   }
   if (filters.bbox) {
     const { swLat, swLon, neLat, neLon } = filters.bbox;
+    // Compare against the numeric columns directly (no CAST) so the
+    // composite (latitude, longitude) B-tree from shared/schema.ts is
+    // eligible for an index scan.
     conditions.push(
-      sql`CAST(${schema.locations.latitude} AS double precision) BETWEEN ${swLat} AND ${neLat}`,
+      sql`${schema.locations.latitude} BETWEEN ${swLat} AND ${neLat}`,
     );
     conditions.push(
-      sql`CAST(${schema.locations.longitude} AS double precision) BETWEEN ${swLon} AND ${neLon}`,
+      sql`${schema.locations.longitude} BETWEEN ${swLon} AND ${neLon}`,
     );
   }
 
+  // Slim SELECT: detail-only fields (hours_structured, access_notes, phone,
+  // website, partnerOrgId, hours free-text) are loaded by the detail endpoint
+  // when a pin is opened. The list payload only needs what the map markers,
+  // filters and search-results UI render.
   const rows = await db
-    .select()
+    .select({
+      id: schema.locations.id,
+      name: schema.locations.name,
+      address: schema.locations.address,
+      latitude: schema.locations.latitude,
+      longitude: schema.locations.longitude,
+      type: schema.locations.type,
+      naloxoneForms: schema.locations.naloxoneForms,
+      tags: schema.locations.tags,
+      verificationLevel: schema.locations.verificationLevel,
+      thnObjectId: schema.locations.thnObjectId,
+      nswNspListing: schema.locations.nswNspListing,
+      vicNspListing: schema.locations.vicNspListing,
+      vicNspSuppliesNaloxone: schema.locations.vicNspSuppliesNaloxone,
+      totalReportsCount: schema.locations.totalReportsCount,
+      reliabilityScore: schema.locations.reliabilityScore,
+      lastReportAt: schema.locations.lastReportAt,
+      addedAt: schema.locations.addedAt,
+      archivedAt: schema.locations.archivedAt,
+    })
     .from(schema.locations)
     .where(and(...conditions));
 
@@ -94,13 +120,20 @@ export async function getLocationsWithConsensus(
   // Fetch the last 90 days of reports for every location in one query and
   // group in JS. The 90-day window is the upper bound for both pin recency
   // (72h subset) and barrier surfacing (30/90-day windows from
-  // algorithms.md §3). Sending barrierFacts on the list response is what
-  // lets the headline-barrier filter work client-side without a per-pin
-  // detail fetch (Phase 5 demand).
+  // algorithms.md §3). Narrow SELECT to just the fields surfaceBarrierFacts +
+  // calculatePinStatus need — skipping `notes` (up to 500 chars/row) cuts the
+  // payload meaningfully when a viewport has many active locations.
   const ninetyDaysAgo = new Date(Date.now() - NINETY_DAYS_MS);
   const seventyTwoHoursAgo = new Date(Date.now() - SEVENTY_TWO_HOURS_MS);
   const reportRows = await db
-    .select()
+    .select({
+      locationId: schema.reports.locationId,
+      reportType: schema.reports.reportType,
+      submittedAt: schema.reports.submittedAt,
+      barriers: schema.reports.barriers,
+      costAmount: schema.reports.costAmount,
+      weight: schema.reports.weight,
+    })
     .from(schema.reports)
     .where(
       and(
@@ -124,14 +157,23 @@ export async function getLocationsWithConsensus(
         lat: Number(loc.latitude),
         lon: Number(loc.longitude),
       });
-    // List response still omits recentReports (timeline) and guardianNotes
-    // for payload size; barrierFacts ARE included so the client filter can
-    // hide places by frequent barrier.
-    const composed = composeLocationWithConsensus(loc, last72h, allRecent, [], { distance });
+    // Cast the narrowed rows back through the composer; it only reads fields
+    // we've SELECTed (status/size/etc.) so the missing detail-only columns
+    // (hours, phone, website, …) are surfaced as `undefined` to clients,
+    // which is what we want — they're loaded on demand by the detail sheet.
+    const composed = composeLocationWithConsensus(
+      loc as unknown as Parameters<typeof composeLocationWithConsensus>[0],
+      last72h as unknown as Parameters<typeof composeLocationWithConsensus>[1],
+      allRecent as unknown as Parameters<typeof composeLocationWithConsensus>[2],
+      [],
+      { distance },
+    );
     composed.reliabilityStars = Math.round(Number(loc.reliabilityScore));
     composed.recentReports = [];
     composed.guardianNotes = [];
-    composed.barrierFacts = surfaceBarrierFacts(allRecent);
+    composed.barrierFacts = surfaceBarrierFacts(
+      allRecent as unknown as Parameters<typeof surfaceBarrierFacts>[0],
+    );
     return composed;
   });
 }
