@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   isLocaleReady,
   LOCALES,
@@ -17,7 +17,11 @@ interface SettingsSheetProps {
   preferences: AppPreferences;
   onChange: (prefs: AppPreferences) => void;
   onClose: () => void;
-  onForgetDevice: () => void;
+  /**
+   * Awaited so the sheet can show "Forgetting…" feedback during the
+   * server-side wipe before the parent reloads the page.
+   */
+  onForgetDevice: () => void | Promise<void>;
 }
 
 export function SettingsSheet({
@@ -30,6 +34,19 @@ export function SettingsSheet({
   const sheetRef = useRef<HTMLDivElement>(null);
   const watches = useWatches();
   const hasActiveWatches = (watches.data?.length ?? 0) > 0;
+  const [forgetting, setForgetting] = useState(false);
+
+  const handleForget = async () => {
+    if (forgetting) return;
+    setForgetting(true);
+    try {
+      await onForgetDevice();
+    } finally {
+      // The parent typically navigates away on success; this is just a
+      // safety net if the call returns without redirecting.
+      setForgetting(false);
+    }
+  };
 
   useEffect(() => {
     sheetRef.current?.focus();
@@ -192,10 +209,22 @@ export function SettingsSheet({
           </a>
           <button
             type="button"
-            onClick={onForgetDevice}
-            className="mt-2 block w-full rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 px-3 py-2.5 text-sm text-red-800 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700 active:scale-[0.97] transition-transform"
+            onClick={handleForget}
+            disabled={forgetting}
+            aria-busy={forgetting}
+            className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 px-3 py-2.5 text-sm text-red-800 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700 active:scale-[0.97] transition-transform disabled:opacity-60 disabled:cursor-wait"
           >
-            {t("settings.forget_link")}
+            {forgetting ? (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="inline-block h-3 w-3 rounded-full border-2 border-red-700/30 border-t-red-700 animate-spin"
+                />
+                {t("my_places.forgetting")}
+              </>
+            ) : (
+              t("settings.forget_link")
+            )}
           </button>
         </Section>
       </div>

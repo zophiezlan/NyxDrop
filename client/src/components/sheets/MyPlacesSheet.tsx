@@ -208,10 +208,13 @@ function SavedTab({
               type="button"
               onClick={() => unsave.mutate(row.id)}
               disabled={unsave.isPending}
-              className="text-red-700 dark:text-red-400 hover:underline focus:outline-none focus:underline"
+              aria-busy={unsave.isPending && unsave.variables === row.id}
+              className="text-red-700 dark:text-red-400 hover:underline focus:outline-none focus:underline disabled:opacity-60 disabled:cursor-wait"
               aria-label={t("my_places.remove_label").replace("{name}", row.location.name)}
             >
-              ✕ {t("my_places.remove")}
+              {unsave.isPending && unsave.variables === row.id
+                ? t("my_places.removing")
+                : `✕ ${t("my_places.remove")}`}
             </button>
           </div>
         </li>
@@ -316,10 +319,13 @@ function WatchingTab({
               type="button"
               onClick={() => unwatch.mutate(row.id)}
               disabled={unwatch.isPending}
-              className="text-red-700 dark:text-red-400 hover:underline focus:outline-none focus:underline"
+              aria-busy={unwatch.isPending && unwatch.variables === row.id}
+              className="text-red-700 dark:text-red-400 hover:underline focus:outline-none focus:underline disabled:opacity-60 disabled:cursor-wait"
               aria-label={t("my_places.stop_watching_label").replace("{name}", row.location.name)}
             >
-              🔕 {t("my_places.stop_watching")}
+              {unwatch.isPending && unwatch.variables === row.id
+                ? t("my_places.stopping_watch")
+                : `🔕 ${t("my_places.stop_watching")}`}
             </button>
           </div>
         </li>

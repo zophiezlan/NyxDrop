@@ -311,6 +311,11 @@ function WhereStep({
         className="w-full rounded-xl border border-nl-border-input px-3 py-2.5 text-sm focus:border-nl-primary focus:outline-none focus:ring-1 focus:ring-nl-primary"
         autoFocus
       />
+      {searching ? (
+        <p className="text-xs text-fg-muted px-2 py-1" role="status" aria-live="polite">
+          {t("search.searching")}
+        </p>
+      ) : null}
       <ul className="divide-y divide-nl-divider">
         {results.map((loc) => (
           <li key={loc.id}>
@@ -325,6 +330,11 @@ function WhereStep({
           </li>
         ))}
       </ul>
+      {query.trim().length >= 2 && !searching && results.length === 0 ? (
+        <p className="text-xs text-fg-muted px-2" role="status">
+          {t("search.no_matches")}
+        </p>
+      ) : null}
       {query.trim().length >= 2 && !searching ? (
         <button
           type="button"
@@ -366,6 +376,7 @@ function AddNewLocation({
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const useMyLocation = () => {
@@ -373,12 +384,18 @@ function AddNewLocation({
       setError("Geolocation is not available on this device.");
       return;
     }
+    setError(null);
+    setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLatitude(pos.coords.latitude.toFixed(6));
         setLongitude(pos.coords.longitude.toFixed(6));
+        setLocating(false);
       },
-      () => setError("Could not read your location."),
+      () => {
+        setError("Could not read your location.");
+        setLocating(false);
+      },
       { timeout: 10_000 },
     );
   };
@@ -476,9 +493,21 @@ function AddNewLocation({
           <button
             type="button"
             onClick={useMyLocation}
-            className="rounded-xl border border-nl-border-input px-3 py-2 text-xs hover:bg-nl-hover"
+            disabled={locating}
+            aria-busy={locating}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-nl-border-input px-3 py-2 text-xs hover:bg-nl-hover disabled:opacity-50 disabled:cursor-wait"
           >
-            Use my location
+            {locating ? (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="inline-block h-3 w-3 rounded-full border-2 border-nl-primary/30 border-t-nl-primary animate-spin"
+                />
+                Locating…
+              </>
+            ) : (
+              "Use my location"
+            )}
           </button>
         </div>
       </Field>
