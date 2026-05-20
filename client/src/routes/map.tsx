@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation as useWouterLocation } from "wouter";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { useLocations } from "@/hooks/use-locations";
@@ -244,6 +244,19 @@ export default function MapRoute({ openSheet, sheetId, forceMode }: MapRouteProp
 
       {locationsQuery.isError ? <ApiBanner message={t("errors.api_unreachable")} /> : null}
 
+      <LoadingIndicator
+        isFetching={locationsQuery.isFetching}
+        count={visibleLocations.length}
+        hidden={
+          mode === "now" ||
+          !!selectedId ||
+          !!reportState ||
+          openSheet === "my-places" ||
+          settingsSheetOpen
+        }
+      />
+
+
       {openSheet === "my-places" ? (
         <MyPlacesSheet
           onClose={handleClose}
@@ -470,6 +483,79 @@ function TopRightButtons({
         👤
       </button>
     </div>
+  );
+}
+
+// `LoadingIndicator` surfaces query state to the user. While the locations
+// query is in flight we show a top-edge indeterminate progress strip plus a
+// small "Loading places…" chip; once data lands the chip switches to a
+// place-count summary that auto-dismisses after a couple of seconds. The
+// idea is to set expectations during slow viewport renders (whole cities,
+// states) without cluttering the map permanently.
+function LoadingIndicator({
+  isFetching,
+  count,
+  hidden,
+}: {
+  isFetching: boolean;
+  count: number;
+  hidden: boolean;
+}) {
+  const t = useT();
+  const [recentlyLoaded, setRecentlyLoaded] = useState(false);
+  const wasFetchingRef = useRef(false);
+
+  useEffect(() => {
+    if (isFetching) {
+      wasFetchingRef.current = true;
+      setRecentlyLoaded(false);
+      return;
+    }
+    if (!wasFetchingRef.current) return;
+    wasFetchingRef.current = false;
+    setRecentlyLoaded(true);
+    const tid = setTimeout(() => setRecentlyLoaded(false), 2200);
+    return () => clearTimeout(tid);
+  }, [isFetching]);
+
+  if (hidden) return null;
+  if (!isFetching && !recentlyLoaded) return null;
+
+  const countLabel =
+    count === 1
+      ? t("map.showing_count_one")
+      : t("map.showing_count_other").replace("{count}", String(count));
+
+  return (
+    <>
+      {isFetching ? (
+        <div
+          aria-hidden="true"
+          className="fixed inset-x-0 top-0 z-40 h-0.5 overflow-hidden pointer-events-none"
+        >
+          <div className="h-full w-1/3 bg-nl-primary/80 animate-nl-progress" />
+        </div>
+      ) : null}
+      <div
+        className="fixed inset-x-3 top-3 z-30 flex items-center justify-center pointer-events-none"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-surface/95 backdrop-blur px-3 py-1.5 text-xs text-fg shadow-md ring-1 ring-nl-ring">
+          {isFetching ? (
+            <>
+              <span
+                aria-hidden="true"
+                className="inline-block h-3 w-3 rounded-full border-2 border-nl-primary/30 border-t-nl-primary animate-spin"
+              />
+              <span>{t("map.loading_places")}</span>
+            </>
+          ) : (
+            <span>{countLabel}</span>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 

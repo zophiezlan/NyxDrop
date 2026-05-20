@@ -135,3 +135,17 @@ html {
 .animate-sheet-up {
   animation: sheet-up 0.25s ease-out;
 }
+
+/* Indeterminate top-of-viewport progress stripe shown while the locations
+   query is in flight. Two-second linear sweep, repeats. */
+@keyframes nl-progress-stripe {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+.animate-nl-progress {
+  animation: nl-progress-stripe 1.4s linear infinite;
+}

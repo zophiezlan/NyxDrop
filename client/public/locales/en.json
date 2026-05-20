@@ -173,6 +173,9 @@
   "my_places.forget_open": "Open My Places to forget this device →",
 
   "map.loading": "Loading the map…",
+  "map.loading_places": "Loading places…",
+  "map.showing_count_one": "Showing 1 place",
+  "map.showing_count_other": "Showing {count} places",
   "map.barrier_chip_multi": "{count} soft barrier filters active",
   "map.barrier_chip_hiding": "Hiding {count} {places} — {phrase}",
   "map.barrier_chip_place": "place",
